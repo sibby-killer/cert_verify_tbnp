@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "outputDirectory": "client/dist",
   "rewrites": [
     {
       "source": "/api/admin/auth/login",
@@ -23,7 +24,7 @@
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/dist/index.html"
+      "destination": "/index.html"
     }
   ]
 }

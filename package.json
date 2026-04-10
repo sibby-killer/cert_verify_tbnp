@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vercel dev",
-    "build": "cd client && npm install && npm run build && cd .. && mkdir -p dist && cp -rv client/dist/* dist/",
+    "build": "cd client && npm install && npm run build",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "node lib/db/seed.js",
     "db:studio": "drizzle-kit studio"
