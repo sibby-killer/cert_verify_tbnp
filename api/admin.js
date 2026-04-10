@@ -2,7 +2,7 @@ import { db } from '../lib/db/index.js';
 import { adminUsers, students, courses, certificates, verificationLogs, forgeryReports } from '../lib/db/schema.js';
 import { eq, desc, like } from 'drizzle-orm';
 import { comparePassword, generateJWT } from '../lib/services/security.service.js';
-import { getGeneralStats, getSuspiciousActivity } from '../lib/services/log.service.js';
+import { getDashboardStats, flagSuspicious } from '../lib/services/log.service.js';
 import { success, error, unauthorized } from '../lib/utils/responseHelper.js';
 import { authenticate } from '../lib/middleware/auth.js';
 import crypto from 'crypto';
@@ -28,8 +28,8 @@ export default async function handler(req, res) {
   try {
     // 3. Dashboard
     if (url.includes('/dashboard')) {
-      const stats = await getGeneralStats();
-      const suspicious = await getSuspiciousActivity(5);
+      const stats = await getDashboardStats();
+      const suspicious = await flagSuspicious(5);
       return success(res, { stats, suspicious });
     }
 
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
     // 6. Logs
     if (url.includes('/logs')) {
-      const data = await db.select().from(verificationLogs).orderBy(desc(verificationLogs.timestamp)).limit(100);
+      const data = await db.select().from(verificationLogs).orderBy(desc(verificationLogs.verifiedAt)).limit(100);
       return success(res, data);
     }
 
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
     if (url.includes('/certificates')) {
        // Minimal cert retrieval
        if (method === 'GET') {
-         const data = await db.select().from(certificates).orderBy(desc(certificates.issuedAt)).limit(50);
+         const data = await db.select().from(certificates).orderBy(desc(certificates.issuedDate)).limit(50);
          return success(res, data);
        }
     }
