@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/verify/(.*)",
+      "destination": "/api/verify.js"
+    },
+    {
+      "source": "/api/report",
+      "destination": "/api/report.js"
+    },
+    {
+      "source": "/api/admin/auth/(.*)",
+      "destination": "/api/admin/auth.js"
+    },
+    {
+      "source": "/api/admin/dashboard",
+      "destination": "/api/admin/dashboard.js"
+    },
+    {
+      "source": "/api/admin/certificates(.*)",
+      "destination": "/api/admin/certificates.js"
+    },
+    {
+      "source": "/api/admin/students(.*)",
+      "destination": "/api/admin/students.js"
+    },
+    {
+      "source": "/api/admin/courses(.*)",
+      "destination": "/api/admin/courses.js"
+    },
+    {
+      "source": "/api/admin/logs(.*)",
+      "destination": "/api/admin/logs.js"
+    },
+    {
+      "source": "/api/admin/reports(.*)",
+      "destination": "/api/admin/reports.js"
+    },
+    {
+      "source": "/api/admin/users(.*)",
+      "destination": "/api/admin/users.js"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/client/index.html"
+    }
+  ]
+}
