@@ -45,7 +45,7 @@
       "destination": "/api/admin/users.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
