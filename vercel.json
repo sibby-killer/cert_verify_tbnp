@@ -13,36 +13,12 @@
       "destination": "/api/report.js"
     },
     {
-      "source": "/api/admin/auth/(.*)",
-      "destination": "/api/admin/auth.js"
+      "source": "/api/admin/(.*)",
+      "destination": "/api/admin.js"
     },
     {
-      "source": "/api/admin/dashboard",
-      "destination": "/api/admin/dashboard.js"
-    },
-    {
-      "source": "/api/admin/certificates(.*)",
-      "destination": "/api/admin/certificates.js"
-    },
-    {
-      "source": "/api/admin/students(.*)",
-      "destination": "/api/admin/students.js"
-    },
-    {
-      "source": "/api/admin/courses(.*)",
-      "destination": "/api/admin/courses.js"
-    },
-    {
-      "source": "/api/admin/logs(.*)",
-      "destination": "/api/admin/logs.js"
-    },
-    {
-      "source": "/api/admin/reports(.*)",
-      "destination": "/api/admin/reports.js"
-    },
-    {
-      "source": "/api/admin/users(.*)",
-      "destination": "/api/admin/users.js"
+      "source": "/api/test",
+      "destination": "/api/test.js"
     },
     {
       "source": "/((?!api/).*)",
