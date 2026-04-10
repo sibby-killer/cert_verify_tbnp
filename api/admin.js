@@ -9,6 +9,7 @@ import crypto from 'crypto';
 
 export default async function handler(req, res) {
   const { url, method } = req;
+  console.log(`[AdminAPI] ${method} ${url}`);
 
   // 1. Auth Logic (Public-ish)
   if (url.includes('/auth/login') && method === 'POST') {
