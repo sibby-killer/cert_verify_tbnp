@@ -18,10 +18,18 @@ export default function LoginPage() {
       if (res.success) {
         navigate('/admin/dashboard');
       } else {
-        setError(res.message);
+        setError(res.message || 'Invalid credentials');
       }
     } catch (err) {
-      setError('Connection failed. Please check your credentials.');
+      const status = err.response?.status;
+      const serverMsg = err.response?.data?.message;
+      if (status === 401) {
+        setError('Invalid username or password.');
+      } else if (status === 404) {
+        setError('API Endpoint not found (404). Check Vercel configuration.');
+      } else {
+        setError(`Connection failed (${status || 'Network Error'}). ${serverMsg || 'Please ensure Environment Variables are set in Vercel.'}`);
+      }
     } finally {
       setLoading(false);
     }
