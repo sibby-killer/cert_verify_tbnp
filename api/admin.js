@@ -132,10 +132,10 @@ export default async function handler(req, res) {
 
     // ── 8. Certificates ─────────────────────────────────────────────────────
     if (url.includes('/certificates')) {
-      // List
+      // List - return joined data so frontend CertTable works
       if (method === 'GET') {
-        const data = await db.select().from(certificates)
-          .orderBy(desc(certificates.issuedDate)).limit(50);
+        const { getCertificateBySecurity, getAllCertificates } = await import('../lib/services/certificate.service.js');
+        const data = await getAllCertificates();
         return success(res, data);
       }
 
