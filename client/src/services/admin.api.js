@@ -46,9 +46,13 @@ export const revokeCert = async (id, reason) => (await api.put(`/certificates/${
 
 export const getStudents = async () => (await api.get('/students')).data;
 export const createStudent = async (data) => (await api.post('/students', data)).data;
+export const updateStudent = async (id, data) => (await api.put(`/students/${id}`, data)).data;
+export const deleteStudent = async (id) => (await api.delete(`/students/${id}`)).data;
 
 export const getCourses = async () => (await api.get('/courses')).data;
 export const createCourse = async (data) => (await api.post('/courses', data)).data;
+export const updateCourse = async (id, data) => (await api.put(`/courses/${id}`, data)).data;
+export const deleteCourse = async (id) => (await api.delete(`/courses/${id}`)).data;
 
 export const getLogs = async (params) => (await api.get('/logs', { params })).data;
 
@@ -58,3 +62,4 @@ export const updateReport = async (id, status) => (await api.put(`/reports/${id}
 export const getUsers = async () => (await api.get('/users')).data;
 export const createUser = async (data) => (await api.post('/users', data)).data;
 export const updateUser = async (id, data) => (await api.put(`/users/${id}`, data)).data;
+export const deleteUser = async (id) => (await api.delete(`/users/${id}`)).data;

@@ -89,9 +89,22 @@ export default async function handler(req, res) {
         const data = await db.select().from(students).orderBy(desc(students.createdAt));
         return success(res, data);
       }
+
+      if (auth.user.role !== 'superadmin') return unauthorized(res);
+
       if (method === 'POST') {
         const [student] = await db.insert(students).values({ ...req.body, id: crypto.randomUUID() }).returning();
         return success(res, student);
+      }
+      if (method === 'PUT') {
+        const id = url.split('/').pop();
+        const [student] = await db.update(students).set(req.body).where(eq(students.id, id)).returning();
+        return success(res, student);
+      }
+      if (method === 'DELETE') {
+        const id = url.split('/').pop();
+        await db.delete(students).where(eq(students.id, id));
+        return success(res, { message: 'Student deleted' });
       }
     }
 
@@ -101,9 +114,22 @@ export default async function handler(req, res) {
         const data = await db.select().from(courses).orderBy(courses.name);
         return success(res, data);
       }
+
+      if (auth.user.role !== 'superadmin') return unauthorized(res);
+
       if (method === 'POST') {
         const [course] = await db.insert(courses).values({ ...req.body, id: crypto.randomUUID() }).returning();
         return success(res, course);
+      }
+      if (method === 'PUT') {
+        const id = url.split('/').pop();
+        const [course] = await db.update(courses).set(req.body).where(eq(courses.id, id)).returning();
+        return success(res, course);
+      }
+      if (method === 'DELETE') {
+        const id = url.split('/').pop();
+        await db.delete(courses).where(eq(courses.id, id));
+        return success(res, { message: 'Course deleted' });
       }
     }
 
