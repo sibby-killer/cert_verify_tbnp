@@ -12,6 +12,7 @@ import CoursesPage from './pages/admin/CoursesPage.jsx';
 import LogsPage from './pages/admin/LogsPage.jsx';
 import ReportsPage from './pages/admin/ReportsPage.jsx';
 import SettingsPage from './pages/admin/SettingsPage.jsx';
+import SetupPage from './pages/admin/SetupPage.jsx';
 
 import ProtectedRoute from './components/admin/ProtectedRoute.jsx';
 
@@ -24,8 +25,9 @@ function App() {
         <Route path="/verify" element={<ResultPage />} />
         <Route path="/report" element={<ReportPage />} />
 
-        {/* Admin Login */}
+        {/* Admin Login & Setup */}
         <Route path="/admin/login" element={<LoginPage />} />
+        <Route path="/admin/setup" element={<SetupPage />} />
 
         {/* Protected Admin Routes */}
         <Route element={<ProtectedRoute />}>

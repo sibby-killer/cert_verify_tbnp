@@ -87,9 +87,12 @@ export default function LoginPage() {
           </form>
         </div>
         
-        <div className="mt-12 text-center">
-          <Link to="/" className="text-slate-500 hover:text-[#C9A84C] transition-colors font-semibold">
-            &larr; Return to Public Portal
+        <div className="mt-8 text-center pt-6 border-t border-slate-700">
+          <p className="text-slate-400 text-sm">
+            Problems? <Link to="/admin/setup" className="text-blue-400 hover:text-blue-300 font-medium">Setup First Admin</Link>
+          </p>
+          <Link to="/" className="inline-block mt-4 text-slate-400 hover:text-white transition-colors text-sm">
+            ← Return to Public Portal
           </Link>
         </div>
       </div>

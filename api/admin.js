@@ -1,7 +1,7 @@
 import { db } from '../lib/db/index.js';
 import { adminUsers, students, courses, certificates, verificationLogs, forgeryReports } from '../lib/db/schema.js';
 import { eq, desc, like } from 'drizzle-orm';
-import { comparePassword, generateJWT } from '../lib/services/security.service.js';
+import { comparePassword, generateJWT, hashPassword } from '../lib/services/security.service.js';
 import { getDashboardStats, flagSuspicious } from '../lib/services/log.service.js';
 import { success, error, unauthorized } from '../lib/utils/responseHelper.js';
 import { authenticate } from '../lib/middleware/auth.js';
@@ -11,14 +11,63 @@ export default async function handler(req, res) {
   const { url, method } = req;
   console.log(`[AdminAPI] ${method} ${url}`);
 
-  // 1. Auth Logic (Public-ish)
+  // 0. Setup Logic (Admin Initialization)
+  if (url.includes('/setup') && method === 'POST') {
+    try {
+      const existing = await db.select().from(adminUsers);
+      if (existing.length > 0) {
+        return error(res, 'Setup already completed. Please log in.', 403);
+      }
+
+      const { username, password, email } = req.body;
+      const hashedPassword = await hashPassword(password);
+      
+      const [newUser] = await db.insert(adminUsers).values({
+        id: crypto.randomUUID(),
+        username,
+        password: hashedPassword,
+        email,
+        role: 'admin',
+        isActive: true
+      }).returning();
+
+      return success(res, { message: 'Admin created successfully!', user: newUser.username }, 201);
+    } catch (err) {
+      console.error('[Setup Error]:', err);
+      return error(res, `Setup failed: ${err.message}`, 500);
+    }
+  }
+
+  // 1. Auth Logic... (already updated in previous step)
   if (url.includes('/auth/login') && method === 'POST') {
-    const { username, password } = req.body;
-    const [user] = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
-    if (!user || !(await comparePassword(password, user.password))) return unauthorized(res);
-    if (!user.isActive) return error(res, 'Account is deactivated', 403);
-    const token = generateJWT({ id: user.id, username: user.username, role: user.role });
-    return success(res, { token, user: { username: user.username, role: user.role } });
+    try {
+      const { username, password } = req.body || {};
+      if (!username || !password) {
+        return error(res, 'Username and password are required', 400);
+      }
+
+      console.log(`[Auth] Attempting login for: ${username}`);
+      const [user] = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
+      
+      if (!user) {
+        console.log(`[Auth] User not found: ${username}`);
+        return unauthorized(res);
+      }
+
+      const isMatch = await comparePassword(password, user.password);
+      if (!isMatch) {
+        console.log(`[Auth] Password mismatch for: ${username}`);
+        return unauthorized(res);
+      }
+
+      if (!user.isActive) return error(res, 'Account is deactivated', 403);
+
+      const token = generateJWT({ id: user.id, username: user.username, role: user.role });
+      return success(res, { token, user: { username: user.username, role: user.role } });
+    } catch (err) {
+      console.error('[Auth Error]:', err);
+      return error(res, `Login error: ${err.message || 'Unknown error'}`, 500);
+    }
   }
 
   // 2. Protected Logic Start
