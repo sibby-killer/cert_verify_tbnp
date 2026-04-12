@@ -217,6 +217,83 @@ export default function IssuePage() {
               </div>
             )}
 
+            {step === 2 && method === 'bulk' && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+                <div>
+                  <h3 className="font-bold text-slate-800 mb-1">Upload CSV File</h3>
+                  <p className="text-xs text-slate-400">Each row: <code className="bg-slate-100 px-1 rounded">studentId,courseId,graduationYear</code></p>
+                </div>
+
+                {/* CSV Template download */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-slate-700">Need a template?</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Download and fill in your student IDs</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const header = 'studentId,courseId,graduationYear';
+                        const examples = students.slice(0,2).map((s,i) => `${s.id},${courses[0]?.id || 'COURSE_ID'},${new Date().getFullYear()}`).join('\n');
+                        const blob = new Blob([header + '\n' + examples], { type: 'text/csv' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'bnp_bulk_template.csv';
+                        a.click();
+                      }}
+                      className="bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-800 transition-all"
+                    >
+                      Download Template
+                    </button>
+                  </div>
+
+                  {/* Show student/course reference */}
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="font-bold text-slate-500 uppercase tracking-wider mb-1">Students</p>
+                      {students.slice(0, 4).map(s => (
+                        <p key={s.id} className="font-mono text-slate-400 truncate">{s.id.slice(0,8)}… = {s.name}</p>
+                      ))}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-500 uppercase tracking-wider mb-1">Courses</p>
+                      {courses.slice(0, 4).map(c => (
+                        <p key={c.id} className="font-mono text-slate-400 truncate">{c.id.slice(0,8)}… = {c.name}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Select CSV File</label>
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => setBulkFile(e.target.files[0] || null)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-green-700 file:text-white hover:file:bg-green-800 cursor-pointer"
+                  />
+                  {bulkFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {bulkFile.name} selected</p>}
+                </div>
+
+                {error && <p className="text-red-500 text-sm italic">{error}</p>}
+
+                <div className="flex space-x-4 pt-2">
+                  <button onClick={() => setStep(1)} className="flex-1 py-3 text-slate-400 font-bold">Back</button>
+                  <button
+                    onClick={handleIssueBulk}
+                    disabled={!bulkFile || submitting}
+                    className="bg-green-700 text-white px-10 py-3 rounded-xl font-bold shadow-lg disabled:opacity-40 flex items-center space-x-2"
+                  >
+                    {submitting ? (
+                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div><span>Processing…</span></>
+                    ) : (
+                      <span>Process CSV</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {step === 3 && (
               <div className="animate-in fade-in duration-500 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold text-slate-800 mb-6">Confirm Details</h3>
