@@ -20,25 +20,25 @@ export default function ResultValid({ data }) {
           <div className="space-y-6">
             <div>
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Student Name</label>
-              <p className="text-lg font-bold text-[#1B3A6B]">{student.name}</p>
+              <p className="text-lg font-bold text-green-900">{student.name}</p>
             </div>
             <div>
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Course of Study</label>
-              <p className="text-lg font-bold text-[#1B3A6B]">{course.name}</p>
+              <p className="text-lg font-bold text-green-900">{course.name}</p>
             </div>
             <div>
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Graduation Year</label>
-              <p className="text-lg font-bold text-[#1B3A6B]">{certificate.graduationYear}</p>
+              <p className="text-lg font-bold text-green-900">{certificate.graduationYear}</p>
             </div>
           </div>
           <div className="space-y-6">
             <div>
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Security Number</label>
-              <p className="text-lg font-mono font-bold text-[#1B3A6B]">{certificate.securityNumber}</p>
+              <p className="text-lg font-mono font-bold text-green-900">{certificate.securityNumber}</p>
             </div>
             <div>
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Issue Date</label>
-              <p className="text-lg font-bold text-[#1B3A6B]">{new Date(certificate.issuedDate).toLocaleDateString()}</p>
+              <p className="text-lg font-bold text-green-900">{new Date(certificate.issuedDate).toLocaleDateString()}</p>
             </div>
             <div>
               <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Status</label>

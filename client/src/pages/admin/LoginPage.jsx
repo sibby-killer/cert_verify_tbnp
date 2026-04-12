@@ -36,18 +36,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full animate-in fade-in slide-in-from-bottom-10 duration-700">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-[#C9A84C] rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3">
-            <span className="text-slate-900 font-black text-3xl">BNP</span>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Admin Portal</h1>
-          <p className="text-slate-400">Please sign in to access the verification dashboard</p>
+          <img src="/icon-512.png" alt="Bungoma National Polytechnic" className="w-24 h-24 mx-auto mb-4 drop-shadow-md" />
+          <h1 className="text-3xl font-bold text-green-900 mb-2">Admin Portal</h1>
+          <p className="text-slate-600">Please sign in to access the verification dashboard</p>
         </div>
 
-        <div className="bg-white rounded-3xl p-10 shadow-2xl overflow-hidden relative">
-          <div className="absolute top-0 left-0 w-full h-2 bg-[#C9A84C]"></div>
+        <div className="bg-white rounded-3xl p-10 shadow-2xl overflow-hidden relative border border-slate-100">
+          <div className="absolute top-0 left-0 w-full h-2 bg-green-700"></div>
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
@@ -56,7 +54,7 @@ export default function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#1B3A6B] focus:border-transparent outline-none transition-all font-medium"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-green-700 focus:border-transparent outline-none transition-all font-medium text-slate-900"
                 required
               />
             </div>
@@ -66,7 +64,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#1B3A6B] focus:border-transparent outline-none transition-all font-medium"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-green-700 focus:border-transparent outline-none transition-all font-medium text-slate-900"
                 required
               />
             </div>
@@ -80,19 +78,19 @@ export default function LoginPage() {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold shadow-xl hover:bg-slate-800 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50"
+              className="w-full bg-green-700 text-white py-4 rounded-xl font-bold shadow-xl hover:bg-green-800 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50"
             >
               {loading ? 'Authenticating...' : 'Sign In Now'}
             </button>
           </form>
         </div>
         
-        <div className="mt-8 text-center pt-6 border-t border-slate-700">
-          <p className="text-slate-400 text-sm">
-            Problems? <Link to="/admin/setup" className="text-blue-400 hover:text-blue-300 font-medium">Setup First Admin</Link>
+        <div className="mt-8 text-center pt-6 border-t border-slate-200">
+          <p className="text-slate-500 text-sm">
+            Problems? <Link to="/admin/setup" className="text-green-700 hover:text-green-800 font-medium">Setup First Admin</Link>
           </p>
-          <Link to="/" className="inline-block mt-4 text-slate-400 hover:text-white transition-colors text-sm">
-            ← Return to Public Portal
+          <Link to="/" className="inline-block mt-4 text-green-700 hover:text-green-800 transition-colors text-sm font-medium">
+            &larr; Return to Public Portal
           </Link>
         </div>
       </div>

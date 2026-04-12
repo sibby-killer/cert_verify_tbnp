@@ -13,8 +13,7 @@ export default async function handler(req, res) {
     res.status(200).json({ 
       success: false, 
       error_message: err.message,
-      error_stack: err.stack
+      error_cause: err.cause ? err.cause.message : 'No cause',
     });
   }
 }
-

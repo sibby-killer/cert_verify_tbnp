@@ -17,15 +17,13 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="bg-[#1B3A6B] text-white py-6 px-4 shadow-lg">
+      <header className="bg-white text-slate-900 border-b border-green-700 border-b-4 py-4 px-4 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-              <span className="text-[#1B3A6B] font-bold text-xl">BNP</span>
-            </div>
+            <img src="/icon-512.png" alt="BNP Logo" className="w-14 h-14 object-contain" />
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Bungoma National Polytechnic</h1>
-              <p className="text-xs text-slate-300 uppercase tracking-widest">Certificate Verification Portal</p>
+              <h1 className="text-xl font-bold tracking-tight text-green-900">Bungoma National Polytechnic</h1>
+              <p className="text-xs text-green-700 uppercase tracking-widest font-semibold">Certificate Verification Portal</p>
             </div>
           </div>
         </div>
@@ -33,7 +31,7 @@ export default function HomePage() {
 
       <main className="flex-grow max-w-4xl mx-auto w-full px-4 py-12">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-extrabold text-[#1B3A6B] mb-4">Validate Your Credentials</h2>
+          <h2 className="text-3xl font-extrabold text-green-900 mb-4">Validate Your Credentials</h2>
           <p className="text-slate-600 max-w-xl mx-auto">
             Ensuring the integrity of academic achievements. Please use one of the methods below to verify a certificate's authenticity.
           </p>
@@ -43,19 +41,19 @@ export default function HomePage() {
           <div className="flex border-b border-slate-100">
             <button 
               onClick={() => setActiveTab('number')}
-              className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'number' ? 'text-[#1B3A6B] border-b-2 border-[#1B3A6B] bg-slate-50/50' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'number' ? 'text-green-800 border-b-2 border-green-700 bg-green-50/30' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Verify by Number
             </button>
             <button 
               onClick={() => setActiveTab('qr')}
-              className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'qr' ? 'text-[#1B3A6B] border-b-2 border-[#1B3A6B] bg-slate-50/50' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'qr' ? 'text-green-800 border-b-2 border-green-700 bg-green-50/30' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Scan QR Code
             </button>
             <button 
               onClick={() => setActiveTab('file')}
-              className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'file' ? 'text-[#1B3A6B] border-b-2 border-[#1B3A6B] bg-slate-50/50' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex-1 py-4 text-sm font-semibold transition-colors ${activeTab === 'file' ? 'text-green-800 border-b-2 border-green-700 bg-green-50/30' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Upload Certificate
             </button>
@@ -76,7 +74,7 @@ export default function HomePage() {
 
         <div className="mt-12 text-center">
           <p className="text-sm text-slate-500">
-            Found a fake certificate? <a href="/report" className="text-[#C9A84C] font-semibold hover:underline">Report forgery here</a>
+            Found a fake certificate? <a href="/report" className="text-green-700 font-semibold hover:underline">Report forgery here</a>
           </p>
         </div>
       </main>

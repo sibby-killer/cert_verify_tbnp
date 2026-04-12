@@ -13,9 +13,9 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-72 bg-slate-900 text-white flex flex-col z-50">
-      <div className="p-8 flex items-center space-x-3 mb-6">
-        <div className="w-10 h-10 bg-[#C9A84C] rounded-xl flex items-center justify-center font-black text-slate-900 border-b-2 border-slate-900">BNP</div>
+    <aside className="fixed left-0 top-0 h-full w-72 bg-green-900 text-white flex flex-col z-50 shadow-2xl">
+      <div className="p-8 flex items-center space-x-3 mb-6 bg-green-800 border-b border-green-700">
+        <img src="/icon-512.png" alt="BNP Logo" className="w-10 h-10 object-contain drop-shadow-md bg-white rounded-md p-1" />
         <span className="font-bold tracking-tight text-xl">Admin Panel</span>
       </div>
 
@@ -26,7 +26,7 @@ export default function Sidebar() {
             to={link.to}
             className={({ isActive }) => 
               `flex items-center space-x-3 px-4 py-4 rounded-xl transition-all duration-200 group ${
-                isActive ? 'bg-[#C9A84C] text-slate-900 font-bold shadow-lg shadow-[#C9A84C]/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                isActive ? 'bg-white text-green-900 font-bold shadow-lg' : 'text-green-100 hover:bg-green-800 hover:text-white'
               }`
             }
           >
@@ -38,16 +38,16 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-6 border-t border-slate-800 mt-auto">
-        <div className="bg-slate-800 rounded-2xl p-4 flex items-center space-x-3">
-          <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-[#C9A84C]" fill="currentColor" viewBox="0 0 20 20">
+      <div className="p-6 border-t border-green-800 mt-auto bg-green-900">
+        <div className="bg-green-800 rounded-2xl p-4 flex items-center space-x-3">
+          <div className="w-10 h-10 bg-green-700 rounded-full flex items-center justify-center">
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
             </svg>
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-bold truncate">IT Admin</p>
-            <p className="text-xs text-slate-500 truncate">System Controller</p>
+            <p className="text-sm font-bold truncate text-white">IT Admin</p>
+            <p className="text-xs text-green-200 truncate">System Controller</p>
           </div>
         </div>
       </div>
