@@ -56,15 +56,63 @@ export default function IssuePage() {
     }
   };
 
+  const [bulkResults, setBulkResults] = useState(null);
+
   const handleIssueBulk = async () => {
     if (!bulkFile) return;
     setSubmitting(true);
     setError('');
-    // For demo/sim - in real life this would be a FormData post
-    setTimeout(() => {
+    setBulkResults(null);
+
+    try {
+      const text = await bulkFile.text();
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      
+      // Skip header row if present (detect by checking if first row has non-ID content)
+      const rows = lines[0]?.toLowerCase().includes('student') || lines[0]?.toLowerCase().includes('name')
+        ? lines.slice(1)
+        : lines;
+
+      if (rows.length === 0) {
+        setError('CSV file is empty or has no data rows.');
+        setSubmitting(false);
+        return;
+      }
+
+      const results = { success: [], failed: [] };
+
+      for (const row of rows) {
+        // Support: studentId,courseId,graduationYear  OR  regNumber,courseCode,year
+        const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+        if (cols.length < 3) {
+          results.failed.push({ row, reason: 'Invalid format — need 3 columns: studentId,courseId,graduationYear' });
+          continue;
+        }
+
+        const [studentId, courseId, graduationYear] = cols;
+
+        try {
+          const res = await issueSingle({ studentId, courseId, graduationYear });
+          if (res.success) {
+            results.success.push({
+              name: res.data?.student?.name || studentId,
+              securityNumber: res.data?.certificate?.securityNumber,
+            });
+          } else {
+            results.failed.push({ row, reason: res.message });
+          }
+        } catch (err) {
+          results.failed.push({ row, reason: err.response?.data?.message || 'Issuance failed' });
+        }
+      }
+
+      setBulkResults(results);
       setStep(4);
+    } catch (err) {
+      setError('Failed to read CSV file. Make sure it is a valid .csv file.');
+    } finally {
       setSubmitting(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -200,7 +248,7 @@ export default function IssuePage() {
               </div>
             )}
 
-            {step === 4 && (
+            {step === 4 && method === 'single' && (
               <div className="animate-in zoom-in duration-500 flex flex-col items-center justify-center flex-grow text-center pb-8">
                 <div className="w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center mb-4 shadow-xl shadow-green-100">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -209,39 +257,90 @@ export default function IssuePage() {
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800 mb-1">Successfully Issued</h2>
                 <p className="text-slate-400 mb-6 text-sm px-4">The certificate has been digitally signed and the student's secure QR verifier is ready.</p>
-                
+
                 <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg w-full max-w-sm mb-6 relative overflow-hidden" id="qr-export-container">
                   <div className="absolute top-0 left-0 w-full h-2 bg-green-700"></div>
                   <h3 className="font-bold text-slate-800 text-lg mb-1">{students.find(s => s.id === singleData.studentId)?.name}</h3>
                   <p className="text-xs text-slate-500 mb-4 font-medium uppercase tracking-wider">{courses.find(c => c.id === singleData.courseId)?.name}</p>
-                  
+
                   {result?.certificate?.qrCodeUrl && (
-                    <img 
-                      src={result.certificate.qrCodeUrl} 
-                      alt="Verification QR Code" 
+                    <img
+                      src={result.certificate.qrCodeUrl}
+                      alt="Verification QR Code"
                       className="w-48 h-48 mx-auto rounded-xl border border-slate-100 shadow-sm mb-4"
                     />
                   )}
-                  
+
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Assigned Security Number</label>
-                  <p className="font-mono text-lg font-bold text-green-700 tracking-widest">{result?.certificate.securityNumber}</p>
+                  <p className="font-mono text-lg font-bold text-green-700 tracking-widest">{result?.certificate?.securityNumber}</p>
                 </div>
 
                 <div className="flex space-x-3 w-full max-w-sm">
-                  <a 
-                    href={result?.certificate?.qrCodeUrl} 
-                    download={`QR_${result?.certificate.securityNumber}.png`}
-                    className="flex-1 bg-green-700 text-white px-2 py-3 rounded-xl font-bold hover:bg-green-800 transition-all shadow-md text-sm cursor-pointer"
+                  <a
+                    href={result?.certificate?.qrCodeUrl}
+                    download={`QR_${result?.certificate?.securityNumber}.png`}
+                    className="flex-1 bg-green-700 text-white px-2 py-3 rounded-xl font-bold hover:bg-green-800 transition-all shadow-md text-sm cursor-pointer text-center"
                   >
                     Download QR
                   </a>
-                  <button 
-                    onClick={() => { setStep(1); setSingleData({...singleData, studentId: ''}); setResult(null); }}
+                  <button
+                    onClick={() => { setStep(1); setSingleData({ studentId: '', courseId: '', graduationYear: new Date().getFullYear().toString() }); setResult(null); }}
                     className="flex-1 bg-slate-900 text-white px-2 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-md text-sm"
                   >
                     Issue Another
                   </button>
                 </div>
+              </div>
+            )}
+
+            {step === 4 && method === 'bulk' && (
+              <div className="animate-in fade-in duration-500 flex flex-col flex-grow">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">Bulk Issuance Complete</h2>
+                    <p className="text-sm text-slate-400">{bulkResults?.success.length} issued · {bulkResults?.failed.length} failed</p>
+                  </div>
+                </div>
+
+                {bulkResults?.success.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-black uppercase text-green-700 tracking-widest mb-2">✓ Issued ({bulkResults.success.length})</p>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {bulkResults.success.map((r, i) => (
+                        <div key={i} className="flex justify-between text-sm bg-green-50 px-4 py-2 rounded-xl">
+                          <span className="font-medium text-slate-700">{r.name}</span>
+                          <span className="font-mono text-green-700 text-xs">{r.securityNumber}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {bulkResults?.failed.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-black uppercase text-red-500 tracking-widest mb-2">✗ Failed ({bulkResults.failed.length})</p>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {bulkResults.failed.map((r, i) => (
+                        <div key={i} className="text-xs bg-red-50 px-4 py-2 rounded-xl">
+                          <p className="text-red-600 font-medium">{r.reason}</p>
+                          <p className="font-mono text-slate-400 truncate">{r.row}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => { setStep(1); setBulkFile(null); setBulkResults(null); setError(''); }}
+                  className="mt-auto bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all text-sm"
+                >
+                  Start New Issuance
+                </button>
               </div>
             )}
           </div>
