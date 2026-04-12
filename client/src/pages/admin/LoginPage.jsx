@@ -87,7 +87,7 @@ export default function LoginPage() {
         
         <div className="mt-8 text-center pt-6 border-t border-slate-200">
           <p className="text-slate-500 text-sm">
-            Problems? <Link to="/admin/setup" className="text-green-700 hover:text-green-800 font-medium">Setup First Admin</Link>
+            Please contact the Super Admin if you forgot your password.
           </p>
           <Link to="/" className="inline-block mt-4 text-green-700 hover:text-green-800 transition-colors text-sm font-medium">
             &larr; Return to Public Portal

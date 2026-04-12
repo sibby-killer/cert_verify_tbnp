@@ -12,6 +12,7 @@ import CoursesPage from './pages/admin/CoursesPage.jsx';
 import LogsPage from './pages/admin/LogsPage.jsx';
 import ReportsPage from './pages/admin/ReportsPage.jsx';
 import SettingsPage from './pages/admin/SettingsPage.jsx';
+import UsersPage from './pages/admin/UsersPage.jsx';
 import SetupPage from './pages/admin/SetupPage.jsx';
 
 import ProtectedRoute from './components/admin/ProtectedRoute.jsx';
@@ -40,6 +41,7 @@ function App() {
           <Route path="/admin/logs" element={<LogsPage />} />
           <Route path="/admin/reports" element={<ReportsPage />} />
           <Route path="/admin/settings" element={<SettingsPage />} />
+          <Route path="/admin/users" element={<UsersPage />} />
         </Route>
       </Routes>
     </div>

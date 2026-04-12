@@ -5,6 +5,7 @@ import { comparePassword, generateJWT, hashPassword } from '../lib/services/secu
 import { getDashboardStats, flagSuspicious } from '../lib/services/log.service.js';
 import { success, error, unauthorized } from '../lib/utils/responseHelper.js';
 import { authenticate } from '../lib/middleware/auth.js';
+import { generateQR } from '../lib/services/qrcode.service.js';
 import crypto from 'crypto';
 
 export default async function handler(req, res) {
@@ -132,6 +133,61 @@ export default async function handler(req, res) {
          const data = await db.select().from(certificates).orderBy(desc(certificates.issuedDate)).limit(50);
          return success(res, data);
        }
+       if (method === 'POST' && url.includes('/issue')) {
+         const { studentId, courseId, graduationYear } = req.body;
+         const institutionRec = await db.select().from(institutions).limit(1);
+         if (!institutionRec.length) return error(res, 'Institution not configured', 500);
+         
+         const securityNumber = `BNP-${graduationYear}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+         const { base64, dataUrl } = await generateQR(securityNumber);
+         
+         const [newCert] = await db.insert(certificates).values({
+           id: crypto.randomUUID(),
+           studentId,
+           courseId,
+           institutionId: institutionRec[0].id,
+           securityNumber,
+           qrCodeUrl: dataUrl,
+           issuedDate: new Date(),
+           graduationYear: parseInt(graduationYear, 10),
+           status: 'valid'
+         }).returning();
+         
+         return success(res, { certificate: newCert });
+       }
+    }
+
+    // 9. User Management (Superadmin only)
+    if (url.includes('/users')) {
+      if (auth.user.role !== 'superadmin') return unauthorized(res);
+      
+      if (method === 'GET') {
+        const users = await db.select({ id: adminUsers.id, username: adminUsers.username, email: adminUsers.email, role: adminUsers.role, isActive: adminUsers.isActive, createdAt: adminUsers.createdAt }).from(adminUsers);
+        return success(res, users);
+      }
+      if (method === 'POST') {
+        const { username, password, email, role } = req.body;
+        const hashedPassword = await hashPassword(password);
+        const [newUser] = await db.insert(adminUsers).values({
+          id: crypto.randomUUID(),
+          username,
+          password: hashedPassword,
+          email,
+          role: role || 'admin',
+          isActive: true
+        }).returning({ id: adminUsers.id, username: adminUsers.username, role: adminUsers.role });
+        return success(res, newUser, 201);
+      }
+      if (method === 'PUT') {
+        const id = url.split('/').pop();
+        const [updatedUser] = await db.update(adminUsers).set(req.body).where(eq(adminUsers.id, id)).returning({ id: adminUsers.id, username: adminUsers.username, role: adminUsers.role, isActive: adminUsers.isActive });
+        return success(res, updatedUser);
+      }
+      if (method === 'DELETE') {
+        const id = url.split('/').pop();
+        await db.delete(adminUsers).where(eq(adminUsers.id, id));
+        return success(res, { message: 'User deleted' });
+      }
     }
 
     return error(res, 'Resource not found', 404);

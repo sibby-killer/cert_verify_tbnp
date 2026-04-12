@@ -201,24 +201,47 @@ export default function IssuePage() {
             )}
 
             {step === 4 && (
-              <div className="animate-in zoom-in duration-500 flex flex-col items-center justify-center flex-grow text-center">
-                <div className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl shadow-green-100">
-                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="animate-in zoom-in duration-500 flex flex-col items-center justify-center flex-grow text-center pb-8">
+                <div className="w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center mb-4 shadow-xl shadow-green-100">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-2">Successfully Issued</h2>
-                <p className="text-slate-400 mb-8 px-4">The certificate has been digitally signed and the students secret QR key has been generated.</p>
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 w-full mb-8">
+                <h2 className="text-2xl font-bold text-slate-800 mb-1">Successfully Issued</h2>
+                <p className="text-slate-400 mb-6 text-sm px-4">The certificate has been digitally signed and the student's secure QR verifier is ready.</p>
+                
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg w-full max-w-sm mb-6 relative overflow-hidden" id="qr-export-container">
+                  <div className="absolute top-0 left-0 w-full h-2 bg-green-700"></div>
+                  <h3 className="font-bold text-slate-800 text-lg mb-1">{students.find(s => s.id === singleData.studentId)?.name}</h3>
+                  <p className="text-xs text-slate-500 mb-4 font-medium uppercase tracking-wider">{courses.find(c => c.id === singleData.courseId)?.name}</p>
+                  
+                  {result?.certificate?.qrCodeUrl && (
+                    <img 
+                      src={result.certificate.qrCodeUrl} 
+                      alt="Verification QR Code" 
+                      className="w-48 h-48 mx-auto rounded-xl border border-slate-100 shadow-sm mb-4"
+                    />
+                  )}
+                  
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Assigned Security Number</label>
-                  <p className="font-mono text-xl font-bold text-[#C9A84C]">{result?.certificate.securityNumber || 'BNP-2023-XYZ-001'}</p>
+                  <p className="font-mono text-lg font-bold text-green-700 tracking-widest">{result?.certificate.securityNumber}</p>
                 </div>
-                <button 
-                  onClick={() => { setStep(1); setSingleData({...singleData, studentId: ''}); }}
-                  className="bg-slate-900 text-white px-12 py-4 rounded-2xl font-bold hover:bg-slate-800 transition-all"
-                >
-                  Issue Another
-                </button>
+
+                <div className="flex space-x-3 w-full max-w-sm">
+                  <a 
+                    href={result?.certificate?.qrCodeUrl} 
+                    download={`QR_${result?.certificate.securityNumber}.png`}
+                    className="flex-1 bg-green-700 text-white px-2 py-3 rounded-xl font-bold hover:bg-green-800 transition-all shadow-md text-sm cursor-pointer"
+                  >
+                    Download QR
+                  </a>
+                  <button 
+                    onClick={() => { setStep(1); setSingleData({...singleData, studentId: ''}); setResult(null); }}
+                    className="flex-1 bg-slate-900 text-white px-2 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-md text-sm"
+                  >
+                    Issue Another
+                  </button>
+                </div>
               </div>
             )}
           </div>
