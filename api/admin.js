@@ -171,7 +171,7 @@ export default async function handler(req, res) {
           institutionId: institutionRec[0].id,
           securityNumber,
           qrCodeUrl: dataUrl,
-          issuedDate: Math.floor(Date.now() / 1000),
+          issuedDate: new Date(),
           graduationYear: parseInt(graduationYear, 10),
           status: 'valid'
         }).returning();
@@ -187,7 +187,7 @@ export default async function handler(req, res) {
         const [updated] = await db.update(certificates)
           .set({
             status: 'revoked',
-            revokedAt: Math.floor(Date.now() / 1000),
+            revokedAt: new Date(),
             revokeReason: req.body.reason || 'Revoked by admin'
           })
           .where(eq(certificates.id, id)).returning();
