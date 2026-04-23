@@ -19,6 +19,12 @@ export default function StudentsPage() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
 
+  // Bulk Upload State
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkCsv, setBulkCsv] = useState('');
+  const [bulkResult, setBulkResult] = useState(null);
+  const [bulkError, setBulkError] = useState('');
+
   const token = localStorage.getItem('token');
   const role = token ? JSON.parse(atob(token.split('.')[1])).role : 'admin';
   const isSuperadmin = role === 'superadmin';
@@ -104,6 +110,41 @@ export default function StudentsPage() {
     }
   };
 
+  const handleBulkSubmit = async (e) => {
+    e.preventDefault();
+    setBulkError('');
+    setBulkResult(null);
+
+    try {
+      const res = await fetch(`/api/v1/students?mode=bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ csv: bulkCsv })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setBulkResult(data);
+        fetchData();
+      } else {
+        setBulkError(data.message || 'Bulk upload failed');
+      }
+    } catch (err) {
+      setBulkError('Bulk upload failed');
+    }
+  };
+
+  const downloadTemplate = () => {
+    const template = "name,regNumber,email,gender,yearStarted\nJohn Doe,BNP/2026/001,john@example.com,male,2022";
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'students_template.csv';
+    link.click();
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
@@ -162,12 +203,25 @@ export default function StudentsPage() {
             </div>
 
             {isSuperadmin && (
-              <button 
-                onClick={handleOpenCreate}
-                className="bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-green-800 transition-all"
-              >
-                Add New Student
-              </button>
+              <div className="flex space-x-3">
+                <button 
+                  onClick={handleOpenCreate}
+                  className="bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-green-800 transition-all"
+                >
+                  Add Student
+                </button>
+                <button 
+                  onClick={() => {
+                    setBulkCsv('');
+                    setBulkResult(null);
+                    setBulkError('');
+                    setShowBulkModal(true);
+                  }}
+                  className="bg-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800 transition-all"
+                >
+                  Bulk Upload
+                </button>
+              </div>
             )}
           </div>
 
@@ -241,6 +295,62 @@ export default function StudentsPage() {
           )}
         </main>
       </div>
+
+      {showBulkModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-slate-800 mb-4">Bulk Upload Students</h3>
+
+            <button
+              onClick={downloadTemplate}
+              className="mb-4 text-sm font-bold text-blue-700 underline"
+            >
+              Download CSV Template
+            </button>
+
+            <form onSubmit={handleBulkSubmit} className="space-y-4">
+              <textarea
+                value={bulkCsv}
+                onChange={(e) => setBulkCsv(e.target.value)}
+                rows={8}
+                className="w-full p-4 border border-slate-200 rounded-xl text-sm font-mono"
+                placeholder="Paste CSV content here..."
+                required
+              />
+
+              {bulkError && <p className="text-red-500 text-sm">{bulkError}</p>}
+
+              {bulkResult && (
+                <div className="bg-green-50 p-4 rounded-xl text-sm">
+                  Inserted: {bulkResult.inserted} <br />
+                  Failed: {bulkResult.failed}
+                  {bulkResult.errors?.length > 0 && (
+                    <div className="mt-2 text-red-600 max-h-32 overflow-y-auto">
+                      {bulkResult.errors.map((err, i) => <div key={i}>{err}</div>)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkModal(false)}
+                  className="px-4 py-2 text-slate-500 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-700 text-white px-6 py-2 rounded-xl font-bold"
+                >
+                  Upload
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
