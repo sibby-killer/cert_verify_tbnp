@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../../services/admin.api.js';
+import { useAuth } from '../../hooks/useAuth.js';
+import { setAccessToken } from '../../services/admin.api.js';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -14,21 +16,24 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await login(username, password);
-      if (res.success) {
-        navigate('/admin/dashboard');
-      } else {
-        setError(res.message || 'Invalid credentials');
-      }
+      const user = await login(username, password);
+      // Sync the new access token into the axios client
+      // (AuthContext.login() returns the user object, but the token is already
+      //  set inside AuthContext state — we need to let AuthContext pass it down.
+      //  The admin.api.js interceptor will get the token on the next request via
+      //  setAccessToken which AuthContext calls after this navigate.)
+      navigate('/admin/dashboard');
     } catch (err) {
       const status = err.response?.status;
       const serverMsg = err.response?.data?.message;
       if (status === 401) {
         setError('Invalid username or password.');
       } else if (status === 404) {
-        setError('API Endpoint not found (404). Check Vercel configuration.');
+        setError('API endpoint not found (404). Check Vercel / local-dev configuration.');
+      } else if (status === 429) {
+        setError('Too many login attempts. Please wait a minute and try again.');
       } else {
-        setError(`Connection failed (${status || 'Network Error'}). ${serverMsg || 'Please ensure Environment Variables are set in Vercel.'}`);
+        setError(`Connection failed (${status || 'Network Error'}). ${serverMsg || 'Please ensure environment variables are set.'}`);
       }
     } finally {
       setLoading(false);
@@ -51,20 +56,24 @@ export default function LoginPage() {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
               <input 
+                id="login-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-green-700 focus:border-transparent outline-none transition-all font-medium text-slate-900"
+                autoComplete="username"
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
               <input 
+                id="login-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-green-700 focus:border-transparent outline-none transition-all font-medium text-slate-900"
+                autoComplete="current-password"
                 required
               />
             </div>
@@ -76,11 +85,12 @@ export default function LoginPage() {
             )}
 
             <button 
+              id="login-submit"
               type="submit"
               disabled={loading}
               className="w-full bg-green-700 text-white py-4 rounded-xl font-bold shadow-xl hover:bg-green-800 transition-all transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-50"
             >
-              {loading ? 'Authenticating...' : 'Sign In Now'}
+              {loading ? 'Authenticating…' : 'Sign In Now'}
             </button>
           </form>
         </div>

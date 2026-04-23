@@ -2,29 +2,28 @@
   "version": 2,
   "outputDirectory": "client/dist",
   "rewrites": [
-    {
-      "source": "/api/admin/auth/login",
-      "destination": "/api/admin.js"
-    },
-    {
-      "source": "/api/admin/(.*)",
-      "destination": "/api/admin.js"
-    },
-    {
-      "source": "/api/verify",
-      "destination": "/api/verify.js"
-    },
-    {
-      "source": "/api/report",
-      "destination": "/api/report.js"
-    },
-    {
-      "source": "/api/test",
-      "destination": "/api/test.js"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/v1/auth/login",                            "destination": "/api/v1/auth/login.js" },
+    { "source": "/api/v1/auth/logout",                           "destination": "/api/v1/auth/logout.js" },
+    { "source": "/api/v1/auth/refresh",                          "destination": "/api/v1/auth/refresh.js" },
+    { "source": "/api/v1/auth/setup",                            "destination": "/api/v1/auth/setup.js" },
+    { "source": "/api/v1/admin/dashboard",                       "destination": "/api/v1/admin/dashboard.js" },
+    { "source": "/api/v1/admin/students/eligible",               "destination": "/api/v1/admin/students/eligible.js" },
+    { "source": "/api/v1/admin/students",                        "destination": "/api/v1/admin/students/index.js" },
+    { "source": "/api/v1/admin/students/:id",                    "destination": "/api/v1/admin/students/[id].js" },
+    { "source": "/api/v1/admin/courses",                         "destination": "/api/v1/admin/courses/index.js" },
+    { "source": "/api/v1/admin/courses/:id",                     "destination": "/api/v1/admin/courses/[id].js" },
+    { "source": "/api/v1/admin/certificates",                    "destination": "/api/v1/admin/certificates/index.js" },
+    { "source": "/api/v1/admin/certificates/issue",              "destination": "/api/v1/admin/certificates/issue.js" },
+    { "source": "/api/v1/admin/certificates/:id/revoke",         "destination": "/api/v1/admin/certificates/[id]/revoke.js" },
+    { "source": "/api/v1/admin/logs",                            "destination": "/api/v1/admin/logs.js" },
+    { "source": "/api/v1/admin/reports",                         "destination": "/api/v1/admin/reports/index.js" },
+    { "source": "/api/v1/admin/reports/:id",                     "destination": "/api/v1/admin/reports/[id].js" },
+    { "source": "/api/v1/admin/users",                           "destination": "/api/v1/admin/users/index.js" },
+    { "source": "/api/v1/admin/users/:id",                       "destination": "/api/v1/admin/users/[id].js" },
+    { "source": "/api/v1/admin/settings",                        "destination": "/api/v1/admin/settings.js" },
+    { "source": "/api/v1/verify",                                "destination": "/api/v1/verify.js" },
+    { "source": "/api/v1/report",                                "destination": "/api/v1/report.js" },
+    { "source": "/api/v1/health",                                "destination": "/api/v1/health.js" },
+    { "source": "/((?!api/).*)",                                 "destination": "/index.html" }
   ]
 }

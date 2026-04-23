@@ -1,0 +1,75 @@
+name: CI — Build & Verify
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Install · Build · Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Node setup ────────────────────────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # ── Root dependencies ─────────────────────────────────────────────────
+      - name: Install root dependencies
+        run: npm ci
+
+      # ── Client dependencies + build ───────────────────────────────────────
+      - name: Install client dependencies
+        run: npm ci
+        working-directory: client
+
+      - name: Build client
+        run: npm run build
+        working-directory: client
+        env:
+          # Vite build only needs the public env prefix; secrets are not needed
+          NODE_ENV: production
+          VITE_APP_VERSION: ${{ github.sha }}
+
+      # ── Schema verification ───────────────────────────────────────────────
+      - name: Verify Drizzle schema compiles
+        run: node --input-type=module <<'EOF'
+          import('./lib/db/schema.js').then(() => {
+            console.log('✅ Schema OK');
+          }).catch(e => {
+            console.error('❌ Schema error:', e.message);
+            process.exit(1);
+          });
+        EOF
+        env:
+          JWT_SECRET: ci_placeholder_secret_not_real
+          TURSO_DATABASE_URL: libsql://placeholder.turso.io
+          TURSO_AUTH_TOKEN: ci_placeholder
+
+      # ── Migration drift check ─────────────────────────────────────────────
+      - name: Check migration files exist
+        run: |
+          if [ -z "$(ls drizzle/migrations/*.sql 2>/dev/null)" ]; then
+            echo "❌ No migration files found in drizzle/migrations/"
+            exit 1
+          fi
+          echo "✅ Migration files present:"
+          ls drizzle/migrations/
+
+      # ── Build summary ─────────────────────────────────────────────────────
+      - name: Summarise build output
+        run: |
+          echo "### Build Complete ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Client dist size:" >> $GITHUB_STEP_SUMMARY
+          du -sh client/dist >> $GITHUB_STEP_SUMMARY

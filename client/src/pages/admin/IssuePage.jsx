@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../../components/admin/Sidebar.jsx';
 import TopBar from '../../components/admin/TopBar.jsx';
-import { getStudents, getCourses, issueSingle, issueBulk } from '../../services/admin.api.js';
+import { getEligibleStudents, getCourses, issueSingle } from '../../services/admin.api.js';
 
 export default function IssuePage() {
   const [step, setStep] = useState(1);
@@ -23,20 +23,36 @@ export default function IssuePage() {
   // Bulk issuance state
   const [bulkFile, setBulkFile] = useState(null);
 
+  // ── Load courses once on mount ────────────────────────────────────────────
   useEffect(() => {
-    async function loadData() {
+    async function loadCourses() {
       try {
-        const [sRes, cRes] = await Promise.all([getStudents(), getCourses()]);
-        setStudents(sRes.data);
-        setCourses(cRes.data);
+        const cRes = await getCourses({ limit: 500, sort: 'name', order: 'asc' });
+        setCourses(cRes.data || []);
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load courses:', err);
       } finally {
         setLoading(false);
       }
     }
-    loadData();
+    loadCourses();
   }, []);
+
+  // ── Re-load eligible students whenever the selected course changes ──────────
+  const loadEligibleStudents = useCallback(async (courseId) => {
+    if (!courseId) { setStudents([]); return; }
+    try {
+      const res = await getEligibleStudents(courseId);
+      setStudents(res.data || []);
+    } catch (err) {
+      console.error('Failed to load eligible students:', err);
+      setStudents([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadEligibleStudents(singleData.courseId);
+  }, [singleData.courseId, loadEligibleStudents]);
 
   const handleIssueSingle = async () => {
     setSubmitting(true);
