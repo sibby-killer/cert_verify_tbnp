@@ -13,7 +13,7 @@ export default function DashboardPage() {
       try {
         const res = await getDashboard();
         // Backend returns: { success: true, data: { certificates, students, courses, verifications } }
-        setStats(res.data.data);
+        setStats(res.data);
       } catch (err) {
         console.error(err);
       } finally {
