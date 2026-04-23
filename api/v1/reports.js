@@ -1,12 +1,12 @@
-import { db } from '../lib/db/index.js';
-import { forgeryReports } from '../lib/db/schema.js';
+import { db } from '../../lib/db/index.js';
+import { forgeryReports } from '../../lib/db/schema.js';
 import { desc, eq, like, sql } from 'drizzle-orm';
-import { compose } from '../lib/middleware/compose.js';
-import { withRateLimit } from '../lib/middleware/rateLimit.js';
-import { withAuth } from '../lib/middleware/auth.js';
-import { withValidation } from '../lib/middleware/validate.js';
-import { ForgeryReportSchema, UpdateReportSchema } from '../lib/validation/report.schema.js';
-import { parsePagination, buildPaginatedResponse } from '../lib/utils/pagination.js';
+import { compose } from '../../lib/middleware/compose.js';
+import { withRateLimit } from '../../lib/middleware/rateLimit.js';
+import { withAuth } from '../../lib/middleware/auth.js';
+import { withValidation } from '../../lib/middleware/validate.js';
+import { ForgeryReportSchema, UpdateReportSchema } from '../../lib/validation/report.schema.js';
+import { parsePagination, buildPaginatedResponse } from '../../lib/utils/pagination.js';
 import crypto from 'crypto';
 
 export default compose(

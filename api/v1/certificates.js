@@ -1,11 +1,11 @@
-import { db } from '../lib/db/index.js';
-import { certificates } from '../lib/db/schema.js';
+import { db } from '../../lib/db/index.js';
+import { certificates } from '../../lib/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { getAllCertificates, issueCertificate } from '../lib/services/certificate.service.js';
-import { compose } from '../lib/middleware/compose.js';
-import { withRateLimit } from '../lib/middleware/rateLimit.js';
-import { withAuth } from '../lib/middleware/auth.js';
-import { IssueCertificateSchema, RevokeCertificateSchema } from '../lib/validation/certificate.schema.js';
+import { getAllCertificates, issueCertificate } from '../../lib/services/certificate.service.js';
+import { compose } from '../../lib/middleware/compose.js';
+import { withRateLimit } from '../../lib/middleware/rateLimit.js';
+import { withAuth } from '../../lib/middleware/auth.js';
+import { IssueCertificateSchema, RevokeCertificateSchema } from '../../lib/validation/certificate.schema.js';
 
 export default compose(
   withRateLimit(60, 60_000),

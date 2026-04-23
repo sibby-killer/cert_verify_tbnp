@@ -1,14 +1,14 @@
-import { db } from '../lib/db/index.js';
-import { adminUsers, refreshTokens } from '../lib/db/schema.js';
+import { db } from '../../lib/db/index.js';
+import { adminUsers, refreshTokens } from '../../lib/db/schema.js';
 import { eq, and, gt } from 'drizzle-orm';
-import { comparePassword, generateJWT, hashToken, hashPassword } from '../lib/services/security.service.js';
-import { compose } from '../lib/middleware/compose.js';
-import { withRateLimit } from '../lib/middleware/rateLimit.js';
-import { withValidation } from '../lib/middleware/validate.js';
-import { parseCookies } from '../lib/middleware/auth.js';
-import { LoginSchema, SetupSchema } from '../lib/validation/auth.schema.js';
-import { env } from '../lib/config/env.js';
-import { log } from '../lib/utils/logger.js';
+import { comparePassword, generateJWT, hashToken, hashPassword } from '../../lib/services/security.service.js';
+import { compose } from '../../lib/middleware/compose.js';
+import { withRateLimit } from '../../lib/middleware/rateLimit.js';
+import { withValidation } from '../../lib/middleware/validate.js';
+import { parseCookies } from '../../lib/middleware/auth.js';
+import { LoginSchema, SetupSchema } from '../../lib/validation/auth.schema.js';
+import { env } from '../../lib/config/env.js';
+import { log } from '../../lib/utils/logger.js';
 import crypto from 'crypto';
 
 const REFRESH_TOKEN_TTL_MS = env.parseTTLms(env.REFRESH_TOKEN_TTL);

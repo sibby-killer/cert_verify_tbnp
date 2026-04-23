@@ -1,10 +1,10 @@
-import { db } from '../lib/db/index.js';
-import { verificationLogs } from '../lib/db/schema.js';
+import { db } from '../../lib/db/index.js';
+import { verificationLogs } from '../../lib/db/schema.js';
 import { desc, asc, sql } from 'drizzle-orm';
-import { compose } from '../lib/middleware/compose.js';
-import { withRateLimit } from '../lib/middleware/rateLimit.js';
-import { withAuth } from '../lib/middleware/auth.js';
-import { parsePagination, buildPaginatedResponse } from '../lib/utils/pagination.js';
+import { compose } from '../../lib/middleware/compose.js';
+import { withRateLimit } from '../../lib/middleware/rateLimit.js';
+import { withAuth } from '../../lib/middleware/auth.js';
+import { parsePagination, buildPaginatedResponse } from '../../lib/utils/pagination.js';
 
 const SORTABLE = ['verifiedAt', 'result'];
 

@@ -1,12 +1,12 @@
-import { db } from '../lib/db/index.js';
-import { students, certificates } from '../lib/db/schema.js';
+import { db } from '../../lib/db/index.js';
+import { students, certificates } from '../../lib/db/schema.js';
 import { eq, like, or, desc, asc, sql } from 'drizzle-orm';
-import { compose } from '../lib/middleware/compose.js';
-import { withRateLimit } from '../lib/middleware/rateLimit.js';
-import { withAuth } from '../lib/middleware/auth.js';
-import { withValidation } from '../lib/middleware/validate.js';
-import { CreateStudentSchema, UpdateStudentSchema } from '../lib/validation/student.schema.js';
-import { parsePagination, buildPaginatedResponse } from '../lib/utils/pagination.js';
+import { compose } from '../../lib/middleware/compose.js';
+import { withRateLimit } from '../../lib/middleware/rateLimit.js';
+import { withAuth } from '../../lib/middleware/auth.js';
+import { withValidation } from '../../lib/middleware/validate.js';
+import { CreateStudentSchema, UpdateStudentSchema } from '../../lib/validation/student.schema.js';
+import { parsePagination, buildPaginatedResponse } from '../../lib/utils/pagination.js';
 import crypto from 'crypto';
 
 const SORTABLE = ['name', 'regNumber', 'createdAt'];
