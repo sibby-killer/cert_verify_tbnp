@@ -49,13 +49,21 @@ export default compose(
         const where = conditions.length > 0 ? conditions[0] : undefined;
         const [{ total }] = await db.select({ total: sql`COUNT(*)` }).from(students).where(where);
         
-        const sortCol = { 
-          name: students.name, 
-          regNumber: students.regNumber, 
-          createdAt: students.createdAt,
-          gender: students.gender,
-          yearStarted: students.yearStarted
-        }[sort] || students.createdAt;
+        let sortCol;
+        if (sort === 'gender') {
+          sortCol = sql`CASE 
+            WHEN ${students.gender} = 'male' THEN 1 
+            WHEN ${students.gender} = 'female' THEN 2 
+            ELSE 3 
+          END`;
+        } else {
+          sortCol = { 
+            name: students.name, 
+            regNumber: students.regNumber, 
+            createdAt: students.createdAt,
+            yearStarted: students.yearStarted
+          }[sort] || students.createdAt;
+        }
 
         const data = await db.select().from(students).where(where).orderBy(order === 'asc' ? asc(sortCol) : desc(sortCol)).limit(limit).offset(offset);
         return res.status(200).json({ success: true, ...buildPaginatedResponse(data, Number(total), page, limit) });
