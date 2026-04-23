@@ -14,12 +14,14 @@ export default function LogsPage() {
     setLoading(true);
     try {
       const params = { page, limit: 25 };
-      // Map frontend filter → backend `result` query param
       if (filter !== 'all') params.result = filter;
+      
       const res = await getLogs(params);
-      // res.data is an array of { log, certificate, student } join rows
-      setLogs(res.data || []);
-      setPagination(res.pagination || null);
+      
+      // Backend returns: { success: true, data: [...], pagination: {...} }
+      // getLogs() returns res.data (axios), which is this object.
+      setLogs(res?.data || []);
+      setPagination(res?.pagination || null);
     } catch (err) {
       console.error('Failed to fetch logs:', err);
     } finally {
@@ -65,8 +67,7 @@ export default function LogsPage() {
               <thead>
                 <tr className="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest border-b border-slate-100">
                   <th className="px-8 py-5">Timestamp</th>
-                  <th className="px-8 py-5">Security Number</th>
-                  <th className="px-8 py-5">Student</th>
+                  <th className="px-8 py-5">Cert ID / Ref</th>
                   <th className="px-8 py-5">Method</th>
                   <th className="px-8 py-5">IP Address</th>
                   <th className="px-8 py-5">Result</th>
@@ -75,49 +76,43 @@ export default function LogsPage() {
               <tbody className="divide-y divide-slate-50">
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="px-8 py-20 text-center">
+                    <td colSpan="5" className="px-8 py-20 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B3A6B] mx-auto"></div>
                     </td>
                   </tr>
                 ) : logs.length > 0 ? (
-                  logs.map(({ log, certificate, student }) => (
-                    <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                      {/* verifiedAt is the correct field name (was "timestamp") */}
+                  logs.map((log) => (
+                    <tr key={log?.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-5 text-sm text-slate-500">
-                        {log.verifiedAt ? new Date(log.verifiedAt).toLocaleString() : '—'}
+                        {log?.verifiedAt ? new Date(log.verifiedAt).toLocaleString() : '—'}
                       </td>
                       <td className="px-8 py-5 font-mono text-xs font-bold text-[#1B3A6B]">
-                        {certificate?.securityNumber || log.certId?.slice(0, 8) + '…' || 'N/A'}
-                      </td>
-                      <td className="px-8 py-5 text-sm text-slate-700">
-                        {student?.name || '—'}
+                        {log?.certId?.slice(0, 8) || 'N/A'}
                       </td>
                       <td className="px-8 py-5">
                         <span className="text-[10px] font-black bg-slate-100 px-2 py-1 rounded uppercase text-slate-500">
-                          {log.method || 'web'}
+                          {log?.method || 'web'}
                         </span>
                       </td>
-                      {/* verifierIp is the correct field name (was "ipAddress") */}
                       <td className="px-8 py-5 text-sm font-mono text-slate-400">
-                        {log.verifierIp || '—'}
+                        {log?.verifierIp || '—'}
                       </td>
-                      {/* result is the correct field name (was "status") */}
                       <td className="px-8 py-5">
                         <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase border ${
-                          log.result === 'valid'
+                          log?.result === 'valid'
                             ? 'bg-green-50 text-green-600 border-green-100'
-                            : log.result === 'revoked'
+                            : log?.result === 'revoked'
                             ? 'bg-amber-50 text-amber-600 border-amber-100'
                             : 'bg-red-50 text-red-600 border-red-100'
                         }`}>
-                          {log.result || 'unknown'}
+                          {log?.result || 'unknown'}
                         </span>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="px-8 py-20 text-center text-slate-400 italic">
+                    <td colSpan="5" className="px-8 py-20 text-center text-slate-400 italic">
                       No access logs found.
                     </td>
                   </tr>
