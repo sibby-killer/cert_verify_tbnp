@@ -71,6 +71,67 @@ export default compose(
 
       case 'POST': {
         if (req.user.role !== 'superadmin') return res.status(403).json({ success: false, message: 'Forbidden: superadmin required' });
+
+        // ── Bulk Upload Mode ───────────────────────────────────────────────
+        if (mode === 'bulk') {
+          const { csv } = req.body;
+          if (!csv) return res.status(400).json({ success: false, message: 'CSV data required' });
+
+          const lines = csv.split('\n').map(l => l.trim()).filter(Boolean);
+          if (lines.length < 2) return res.status(400).json({ success: false, message: 'CSV must contain header and at least one data row' });
+
+          const header = lines[0].toLowerCase();
+          const EXPECTED = 'name,regnumber,email,gender,yearstarted';
+          if (header !== EXPECTED) return res.status(400).json({ success: false, message: `Invalid header. Expected: ${EXPECTED}` });
+
+          let insertedCount = 0;
+          let failedCount = 0;
+          const errors = [];
+
+          await db.transaction(async (tx) => {
+            for (let i = 1; i < lines.length; i++) {
+              const row = lines[i].split(',').map(v => v.trim());
+              const [name, regNumber, email, gender, yearStarted] = row;
+
+              // Pre-validate with schema
+              const parsed = CreateStudentSchema.safeParse({ 
+                name, 
+                regNumber, 
+                email: email || undefined, 
+                gender: gender || undefined, 
+                yearStarted: yearStarted ? parseInt(yearStarted) : undefined 
+              });
+
+              if (!parsed.success) {
+                failedCount++;
+                errors.push(`Row ${i + 1}: ${parsed.error.issues[0].message}`);
+                continue;
+              }
+
+              try {
+                await tx.insert(students).values({
+                  id: crypto.randomUUID(),
+                  ...parsed.data,
+                  email: parsed.data.email || null,
+                  gender: parsed.data.gender || null,
+                  yearStarted: parsed.data.yearStarted || null
+                });
+                insertedCount++;
+              } catch (err) {
+                failedCount++;
+                if (err.message?.includes('UNIQUE constraint failed')) {
+                  errors.push(`Row ${i + 1}: Registration number ${regNumber} already exists`);
+                } else {
+                  errors.push(`Row ${i + 1}: Database error`);
+                }
+              }
+            }
+          });
+
+          return res.status(200).json({ success: true, inserted: insertedCount, failed: failedCount, errors });
+        }
+
+        // ── Single Student Mode ─────────────────────────────────────────────
         const parsed = CreateStudentSchema.safeParse(req.body);
         if (!parsed.success) return res.status(400).json({ success: false, message: 'Validation failed', errors: parsed.error.issues.map(i => i.message) });
         
