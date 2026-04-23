@@ -9,7 +9,7 @@ import { CreateStudentSchema, UpdateStudentSchema } from '../../lib/validation/s
 import { parsePagination, buildPaginatedResponse } from '../../lib/utils/pagination.js';
 import crypto from 'crypto';
 
-const SORTABLE = ['name', 'regNumber', 'createdAt'];
+const SORTABLE = ['name', 'regNumber', 'createdAt', 'gender', 'yearStarted'];
 
 export default compose(
   withRateLimit(60, 60_000),
@@ -25,7 +25,14 @@ export default compose(
           if (!courseId) return res.status(400).json({ success: false, message: 'courseId is required' });
           const notAlreadyCertified = sql`NOT EXISTS (SELECT 1 FROM ${certificates} WHERE ${certificates.studentId} = ${students.id} AND ${certificates.courseId} = ${courseId})`;
           const searchCondition = search ? sql`AND (${students.name} LIKE ${'%' + search + '%'} OR ${students.regNumber} LIKE ${'%' + search + '%'})` : sql``;
-          const data = await db.select({ id: students.id, name: students.name, regNumber: students.regNumber, email: students.email }).from(students).where(sql`${notAlreadyCertified} ${searchCondition}`).orderBy(asc(students.name)).limit(500);
+          const data = await db.select({ 
+            id: students.id, 
+            name: students.name, 
+            regNumber: students.regNumber, 
+            email: students.email,
+            gender: students.gender,
+            yearStarted: students.yearStarted
+          }).from(students).where(sql`${notAlreadyCertified} ${searchCondition}`).orderBy(asc(students.name)).limit(500);
           return res.status(200).json({ success: true, data });
         }
 
@@ -41,7 +48,15 @@ export default compose(
         const conditions = search ? [or(like(students.name, `%${search}%`), like(students.regNumber, `%${search}%`))] : [];
         const where = conditions.length > 0 ? conditions[0] : undefined;
         const [{ total }] = await db.select({ total: sql`COUNT(*)` }).from(students).where(where);
-        const sortCol = { name: students.name, regNumber: students.regNumber, createdAt: students.createdAt }[sort] || students.createdAt;
+        
+        const sortCol = { 
+          name: students.name, 
+          regNumber: students.regNumber, 
+          createdAt: students.createdAt,
+          gender: students.gender,
+          yearStarted: students.yearStarted
+        }[sort] || students.createdAt;
+
         const data = await db.select().from(students).where(where).orderBy(order === 'asc' ? asc(sortCol) : desc(sortCol)).limit(limit).offset(offset);
         return res.status(200).json({ success: true, ...buildPaginatedResponse(data, Number(total), page, limit) });
       }
@@ -50,9 +65,17 @@ export default compose(
         if (req.user.role !== 'superadmin') return res.status(403).json({ success: false, message: 'Forbidden: superadmin required' });
         const parsed = CreateStudentSchema.safeParse(req.body);
         if (!parsed.success) return res.status(400).json({ success: false, message: 'Validation failed', errors: parsed.error.issues.map(i => i.message) });
-        const { name, regNumber, email } = parsed.data;
+        
+        const { name, regNumber, email, gender, yearStarted } = parsed.data;
         try {
-          const [student] = await db.insert(students).values({ id: crypto.randomUUID(), name, regNumber, email: email || null }).returning();
+          const [student] = await db.insert(students).values({ 
+            id: crypto.randomUUID(), 
+            name, 
+            regNumber, 
+            email: email || null,
+            gender: gender || null,
+            yearStarted: yearStarted || null
+          }).returning();
           return res.status(201).json({ success: true, data: student });
         } catch (err) {
           if (err.message?.includes('UNIQUE constraint failed')) return res.status(409).json({ success: false, message: 'Registration number already exists' });
