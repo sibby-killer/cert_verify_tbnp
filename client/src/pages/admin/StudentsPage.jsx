@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../../components/admin/Sidebar.jsx';
 import TopBar from '../../components/admin/TopBar.jsx';
 import { getStudents, createStudent, updateStudent, deleteStudent } from '../../services/admin.api.js';
@@ -9,32 +9,41 @@ export default function StudentsPage() {
   const [showModal, setShowModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentId, setCurrentId] = useState(null);
-  const [newStudent, setNewStudent] = useState({ name: '', regNumber: '', email: '' });
+  const [newStudent, setNewStudent] = useState({ name: '', regNumber: '', email: '', gender: '', yearStarted: '' });
   const [error, setError] = useState('');
+  
+  // Search and Sort State
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('createdAt');
+  const [order, setOrder] = useState('desc');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
   const token = localStorage.getItem('token');
   const role = token ? JSON.parse(atob(token.split('.')[1])).role : 'admin';
   const isSuperadmin = role === 'superadmin';
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await getStudents();
-      setStudents(res.data);
+      const res = await getStudents({ search, sort, order, page, limit: 25 });
+      setStudents(res.data || []);
+      setPagination(res.pagination || null);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, sort, order, page]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleOpenCreate = () => {
     setError('');
     setIsEdit(false);
-    setNewStudent({ name: '', regNumber: '', email: '' });
+    setNewStudent({ name: '', regNumber: '', email: '', gender: '', yearStarted: new Date().getFullYear() });
     setShowModal(true);
   };
 
@@ -42,7 +51,13 @@ export default function StudentsPage() {
     setError('');
     setIsEdit(true);
     setCurrentId(student.id);
-    setNewStudent({ name: student.name, regNumber: student.regNumber, email: student.email });
+    setNewStudent({ 
+      name: student.name, 
+      regNumber: student.regNumber, 
+      email: student.email,
+      gender: student.gender || '',
+      yearStarted: student.yearStarted || ''
+    });
     setShowModal(true);
   };
 
@@ -59,12 +74,19 @@ export default function StudentsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    // Convert yearStarted to number for the API
+    const studentData = {
+      ...newStudent,
+      yearStarted: newStudent.yearStarted ? parseInt(newStudent.yearStarted) : null
+    };
+
     try {
       let res;
       if (isEdit) {
-        res = await updateStudent(currentId, newStudent);
+        res = await updateStudent(currentId, studentData);
       } else {
-        res = await createStudent(newStudent);
+        res = await createStudent(studentData);
       }
       
       if (res.success) {
@@ -77,7 +99,7 @@ export default function StudentsPage() {
       if (err.response?.status === 401 || err.response?.status === 403) {
         setError('Unauthorized: Only Super Admins can modify students.');
       } else {
-        setError('Failed to process student. Reg number may already exist.');
+        setError(err.response?.data?.message || 'Failed to process student.');
       }
     }
   };
@@ -88,8 +110,48 @@ export default function StudentsPage() {
       <div className="flex-grow ml-72">
         <TopBar title="Students Registry" />
         <main className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-bold text-green-900">Manage Students</h2>
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-green-900 mb-4">Manage Students</h2>
+              <div className="flex space-x-4">
+                {/* Search Input */}
+                <div className="relative">
+                  <input 
+                    type="text"
+                    placeholder="Search by name or reg..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 pr-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 w-64 text-sm"
+                  />
+                  <svg className="w-4 h-4 absolute left-3 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+
+                {/* Sort Dropdown */}
+                <select 
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 text-sm bg-white"
+                >
+                  <option value="name">Sort by Name</option>
+                  <option value="regNumber">Sort by Reg No</option>
+                  <option value="gender">Sort by Gender</option>
+                  <option value="yearStarted">Sort by Year</option>
+                  <option value="createdAt">Sort by Date Added</option>
+                </select>
+
+                <select 
+                  value={order}
+                  onChange={(e) => setOrder(e.target.value)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 text-sm bg-white"
+                >
+                  <option value="asc">Ascending</option>
+                  <option value="desc">Descending</option>
+                </select>
+              </div>
+            </div>
+
             {isSuperadmin && (
               <button 
                 onClick={handleOpenCreate}
@@ -106,7 +168,8 @@ export default function StudentsPage() {
                 <tr className="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest border-b border-slate-100">
                   <th className="px-8 py-5">Name</th>
                   <th className="px-8 py-5">Registration No.</th>
-                  <th className="px-8 py-5">Email Address</th>
+                  <th className="px-8 py-5">Gender</th>
+                  <th className="px-8 py-5">Year Started</th>
                   <th className="px-8 py-5">Registration Date</th>
                   {isSuperadmin && <th className="px-8 py-5 text-right">Actions</th>}
                 </tr>
@@ -114,7 +177,7 @@ export default function StudentsPage() {
               <tbody className="divide-y divide-slate-50">
                 {loading ? (
                   <tr>
-                    <td colSpan={isSuperadmin ? 5 : 4} className="px-8 py-20 text-center">
+                    <td colSpan={isSuperadmin ? 6 : 5} className="px-8 py-20 text-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
                     </td>
                   </tr>
@@ -123,7 +186,8 @@ export default function StudentsPage() {
                     <tr key={student.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-8 py-5 font-bold text-slate-800">{student.name}</td>
                       <td className="px-8 py-5 font-mono text-xs text-slate-500">{student.regNumber}</td>
-                      <td className="px-8 py-5 text-sm text-slate-600">{student.email}</td>
+                      <td className="px-8 py-5 text-sm text-slate-600 capitalize">{student.gender || '—'}</td>
+                      <td className="px-8 py-5 text-sm text-slate-600">{student.yearStarted || '—'}</td>
                       <td className="px-8 py-5 text-sm text-slate-400">{new Date(student.createdAt).toLocaleDateString()}</td>
                       {isSuperadmin && (
                         <td className="px-8 py-5 text-right space-x-3">
@@ -135,12 +199,37 @@ export default function StudentsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={isSuperadmin ? 5 : 4} className="px-8 py-20 text-center text-slate-400 italic">No student records found.</td>
+                    <td colSpan={isSuperadmin ? 6 : 5} className="px-8 py-20 text-center text-slate-400 italic">No student records found.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {pagination && pagination.pages > 1 && (
+            <div className="flex items-center justify-between mt-6">
+              <p className="text-sm text-slate-400">
+                Showing {((page - 1) * 25) + 1}–{Math.min(page * 25, pagination.total)} of {pagination.total} students
+              </p>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={!pagination.hasPrev}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-slate-100 text-slate-600 hover:border-green-700 disabled:opacity-40 transition-all"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={!pagination.hasNext}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-white border border-slate-100 text-slate-600 hover:border-green-700 disabled:opacity-40 transition-all"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -160,27 +249,52 @@ export default function StudentsPage() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Registration Number</label>
-                <input 
-                  type="text" 
-                  value={newStudent.regNumber}
-                  onChange={(e) => setNewStudent({...newStudent, regNumber: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
-                  placeholder="e.g. BNP/2026/001"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Registration Number</label>
+                  <input 
+                    type="text" 
+                    value={newStudent.regNumber}
+                    onChange={(e) => setNewStudent({...newStudent, regNumber: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
+                    placeholder="BNP/2026/001"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Gender</label>
+                  <select 
+                    value={newStudent.gender}
+                    onChange={(e) => setNewStudent({...newStudent, gender: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 bg-white"
+                  >
+                    <option value="">Select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Email Address</label>
-                <input 
-                  type="email" 
-                  value={newStudent.email}
-                  onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
-                  placeholder="e.g. john@example.com"
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Year Started</label>
+                  <input 
+                    type="number" 
+                    value={newStudent.yearStarted}
+                    onChange={(e) => setNewStudent({...newStudent, yearStarted: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
+                    placeholder="2026"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Email Address</label>
+                  <input 
+                    type="email" 
+                    value={newStudent.email}
+                    onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
+                    placeholder="john@example.com"
+                  />
+                </div>
               </div>
               {error && <p className="text-red-500 text-sm italic">{error}</p>}
               <div className="flex space-x-3 mt-8">
