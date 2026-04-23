@@ -146,8 +146,17 @@ export default function StudentsPage() {
                   onChange={(e) => setOrder(e.target.value)}
                   className="px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 text-sm bg-white"
                 >
-                  <option value="asc">Ascending</option>
-                  <option value="desc">Descending</option>
+                  {sort === 'gender' ? (
+                    <>
+                      <option value="asc">Male First</option>
+                      <option value="desc">Female First</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="asc">Ascending</option>
+                      <option value="desc">Descending</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
