@@ -8,6 +8,13 @@
       "when": 1776976171019,
       "tag": "0000_adorable_thunderbird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1776984343858,
+      "tag": "0001_chief_red_shift",
+      "breakpoints": true
     }
   ]
 }
