@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../../components/admin/Sidebar.jsx';
 import TopBar from '../../components/admin/TopBar.jsx';
-import { getStudents, createStudent, updateStudent, deleteStudent } from '../../services/admin.api.js';
+import { getStudents, createStudent, updateStudent, deleteStudent, bulkStudents } from '../../services/admin.api.js';
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
@@ -116,14 +116,7 @@ export default function StudentsPage() {
     setBulkResult(null);
 
     try {
-      const res = await fetch(`/api/v1/students?mode=bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ csv: bulkCsv })
-      });
-
-      const data = await res.json();
+      const data = await bulkStudents(bulkCsv);
 
       if (data.success) {
         setBulkResult(data);
@@ -132,7 +125,7 @@ export default function StudentsPage() {
         setBulkError(data.message || 'Bulk upload failed');
       }
     } catch (err) {
-      setBulkError('Bulk upload failed');
+      setBulkError(err.response?.data?.message || 'Bulk upload failed');
     }
   };
 

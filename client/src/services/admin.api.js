@@ -93,6 +93,7 @@ export const getEligibleStudents  = async (courseId, search) =>
 export const createStudent        = async (data)   => (await api.post('/students', data)).data;
 export const updateStudent        = async (id, data) => (await api.put(`/students/${id}`, data)).data;
 export const deleteStudent        = async (id)     => (await api.delete(`/students/${id}`)).data;
+export const bulkStudents         = async (csv)    => (await api.post('/students?mode=bulk', { csv })).data;
 
 // ── Courses ───────────────────────────────────────────────────────────────────
 export const getCourses    = async (params) => (await api.get('/courses', { params })).data;
