@@ -91,8 +91,8 @@ export const revokeCert      = async (id, reason) => (await api.put(`/certificat
 
 // ── Students ──────────────────────────────────────────────────────────────────
 export const getStudents          = async (params) => (await api.get('/students', { params })).data;
-export const getEligibleStudents  = async (courseId, search) =>
-  (await api.get('/students/eligible', { params: { courseId, ...(search ? { search } : {}) } })).data;
+export const getEligibleStudents  = async (courseId, params = {}) =>
+  (await api.get('/students/eligible', { params: { courseId, ...params } })).data;
 export const createStudent        = async (data)   => (await api.post('/students', data)).data;
 export const updateStudent        = async (id, data) => (await api.put(`/students/${id}`, data)).data;
 export const deleteStudent        = async (id)     => (await api.delete(`/students/${id}`)).data;
