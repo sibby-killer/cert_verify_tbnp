@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../../components/admin/Sidebar.jsx';
 import TopBar from '../../components/admin/TopBar.jsx';
 import { getStudents, createStudent, updateStudent, deleteStudent, bulkStudents } from '../../services/admin.api.js';
+import { useAuth } from '../../hooks/useAuth.js';
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
@@ -25,9 +26,8 @@ export default function StudentsPage() {
   const [bulkResult, setBulkResult] = useState(null);
   const [bulkError, setBulkError] = useState('');
 
-  const token = localStorage.getItem('token');
-  const role = token ? JSON.parse(atob(token.split('.')[1])).role : 'admin';
-  const isSuperadmin = role === 'superadmin';
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
 
   const fetchData = useCallback(async () => {
     setLoading(true);
