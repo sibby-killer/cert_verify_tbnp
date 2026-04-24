@@ -9,7 +9,7 @@ export default function CoursesPage() {
   const [showModal, setShowModal] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [currentId, setCurrentId] = useState(null);
-  const [newCourse, setNewCourse] = useState({ name: '', department: '', duration: '2 Years' });
+  const [newCourse, setNewCourse] = useState({ name: '', deptCode: '' });
   const [error, setError] = useState('');
   
   const token = localStorage.getItem('token');
@@ -34,7 +34,7 @@ export default function CoursesPage() {
   const handleOpenCreate = () => {
     setError('');
     setIsEdit(false);
-    setNewCourse({ name: '', department: '', duration: '2 Years' });
+    setNewCourse({ name: '', deptCode: '' });
     setShowModal(true);
   };
 
@@ -42,7 +42,7 @@ export default function CoursesPage() {
     setError('');
     setIsEdit(true);
     setCurrentId(course.id);
-    setNewCourse({ name: course.name, department: course.department, duration: course.duration });
+    setNewCourse({ name: course.name, deptCode: course.deptCode });
     setShowModal(true);
   };
 
@@ -109,9 +109,6 @@ export default function CoursesPage() {
               courses.map((course) => (
                 <div key={course.id} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow relative">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#C9A84C] bg-amber-50 px-2 py-1 rounded-lg">
-                      {course.duration}
-                    </span>
                     <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18 18.246 18.477 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -119,7 +116,7 @@ export default function CoursesPage() {
                     </div>
                   </div>
                   <h3 className="text-lg font-bold text-slate-800 mb-1">{course.name}</h3>
-                  <p className="text-sm text-slate-400 font-medium mb-4">{course.department}</p>
+                  <p className="text-sm text-slate-400 font-medium mb-4">{course.deptCode}</p>
                   
                   <div className="pt-4 border-t border-slate-50 flex justify-between items-center">
                     <span className="text-xs text-slate-300 font-mono">ID: {course.id.substring(0,8)}</span>
@@ -158,28 +155,15 @@ export default function CoursesPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Department</label>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Dept Code</label>
                 <input 
                   type="text" 
-                  value={newCourse.department}
-                  onChange={(e) => setNewCourse({...newCourse, department: e.target.value})}
+                  value={newCourse.deptCode}
+                  onChange={(e) => setNewCourse({...newCourse, deptCode: e.target.value})}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
-                  placeholder="e.g. Computing & Informatics"
+                  placeholder="e.g. SOBE"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Duration</label>
-                <select 
-                  value={newCourse.duration}
-                  onChange={(e) => setNewCourse({...newCourse, duration: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 bg-white"
-                >
-                  <option>1 Year</option>
-                  <option>2 Years</option>
-                  <option>3 Years</option>
-                  <option>4 Years</option>
-                </select>
               </div>
               {error && <p className="text-red-500 text-sm italic">{error}</p>}
               <div className="flex space-x-3 mt-8">
