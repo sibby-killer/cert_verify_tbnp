@@ -1,7 +1,7 @@
 import { db } from '../../lib/db/index.js';
 import { certificates } from '../../lib/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { getAllCertificates, issueCertificate } from '../../lib/services/certificate.service.js';
+import { getAllCertificates, issueCertificate, getCertificateById } from '../../lib/services/certificate.service.js';
 import { compose } from '../../lib/middleware/compose.js';
 import { withRateLimit } from '../../lib/middleware/rateLimit.js';
 import { withAuth } from '../../lib/middleware/auth.js';
@@ -15,6 +15,11 @@ export default compose(
 
     switch (req.method) {
       case 'GET': {
+        if (id) {
+          const record = await getCertificateById(id);
+          if (!record) return res.status(404).json({ success: false, message: 'Certificate not found' });
+          return res.status(200).json({ success: true, data: record });
+        }
         const result = await getAllCertificates(req.query);
         return res.status(200).json({ success: true, ...result });
       }

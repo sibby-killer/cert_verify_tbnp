@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/public/HomePage.jsx';
 import ResultPage from './pages/public/ResultPage.jsx';
 import ReportPage from './pages/public/ReportPage.jsx';
+import PrintableCertificatePage from './pages/public/PrintableCertificatePage.jsx';
 import LoginPage from './pages/admin/LoginPage.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import CertificatesPage from './pages/admin/CertificatesPage.jsx';
@@ -25,6 +26,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/verify" element={<ResultPage />} />
         <Route path="/report" element={<ReportPage />} />
+        <Route path="/certificate/:id" element={<PrintableCertificatePage />} />
 
         {/* Admin Login & Setup */}
         <Route path="/admin/login" element={<LoginPage />} />
