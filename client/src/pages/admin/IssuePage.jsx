@@ -9,6 +9,7 @@ export default function IssuePage() {
   const [students, setStudents] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [eligibleLoading, setEligibleLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -16,6 +17,7 @@ export default function IssuePage() {
 
   // Filter & Sorting State for Student Selection
   const [studentSearch, setStudentSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [studentGender, setStudentGender] = useState('');
   const [studentYear, setStudentYear] = useState('');
   const [studentSort, setStudentSort] = useState('name');
@@ -28,6 +30,14 @@ export default function IssuePage() {
     courseId: '',
     graduationYear: new Date().getFullYear().toString()
   });
+
+  // ── Debounce studentSearch ──────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(studentSearch);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [studentSearch]);
 
   // ── Load courses once on mount ────────────────────────────────────────────
   useEffect(() => {
@@ -47,9 +57,10 @@ export default function IssuePage() {
   // ── Re-load eligible students whenever the selected course or filters change ──────────
   const loadEligibleStudents = useCallback(async (courseId) => {
     if (!courseId) { setStudents([]); return; }
+    setEligibleLoading(true);
     try {
       const res = await getEligibleStudents(courseId, {
-        search: studentSearch,
+        search: debouncedSearch,
         gender: studentGender,
         yearStarted: studentYear,
         sort: studentSort,
@@ -59,8 +70,10 @@ export default function IssuePage() {
     } catch (err) {
       console.error('Failed to load eligible students:', err);
       setStudents([]);
+    } finally {
+      setEligibleLoading(false);
     }
-  }, [studentSearch, studentGender, studentYear, studentSort, studentOrder]);
+  }, [debouncedSearch, studentGender, studentYear, studentSort, studentOrder]);
 
   useEffect(() => {
     loadEligibleStudents(singleData.courseId);
@@ -107,7 +120,8 @@ export default function IssuePage() {
         if (res.success) {
           results.success.push({
             name: res.data?.student?.name || studentId,
-            securityNumber: res.data?.certificate?.securityNumber,
+            student: res.data?.student,
+            certificate: res.data?.certificate
           });
         } else {
           results.failed.push({ studentId, reason: res.message });
@@ -302,44 +316,61 @@ export default function IssuePage() {
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50 bg-white">
-                              {students.map(s => {
-                                const isSelected = method === 'single' 
-                                  ? singleData.studentId === s.id 
-                                  : selectedStudentIds.includes(s.id);
-                                
-                                return (
-                                  <tr 
-                                    key={s.id} 
-                                    onClick={() => {
-                                      if (method === 'single') {
-                                        setSingleData({...singleData, studentId: s.id});
-                                      } else {
-                                        setSelectedStudentIds(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]);
-                                      }
-                                    }}
-                                    className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${isSelected ? 'bg-blue-50/30' : ''}`}
-                                  >
-                                    <td className="px-6 py-4 text-center">
-                                      <input
-                                        type={method === 'single' ? 'radio' : 'checkbox'}
-                                        checked={isSelected}
-                                        readOnly
-                                        className={`w-4 h-4 text-[#1B3A6B] focus:ring-[#1B3A6B] ${method === 'bulk' ? 'rounded' : ''}`}
-                                      />
-                                    </td>
-                                    <td className="px-6 py-4">
-                                      <p className="font-bold text-slate-800">{s.name}</p>
-                                      <p className="text-[10px] font-mono text-slate-400">{s.regNumber}</p>
-                                    </td>
-                                    <td className="px-6 py-4 text-center capitalize text-slate-500 font-medium">
-                                      {s.gender || '—'}
-                                    </td>
-                                    <td className="px-6 py-4 text-center text-slate-500 font-medium">
-                                      {s.yearStarted || '—'}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
+                              {eligibleLoading ? (
+                                <tr>
+                                  <td colSpan="4" className="px-6 py-12 text-center">
+                                    <div className="flex flex-col items-center justify-center space-y-3">
+                                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1B3A6B]"></div>
+                                      <p className="text-slate-400 text-xs font-medium italic">Refreshing eligible students...</p>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ) : students.length > 0 ? (
+                                students.map(s => {
+                                  const isSelected = method === 'single' 
+                                    ? singleData.studentId === s.id 
+                                    : selectedStudentIds.includes(s.id);
+                                  
+                                  return (
+                                    <tr 
+                                      key={s.id} 
+                                      onClick={() => {
+                                        if (method === 'single') {
+                                          setSingleData({...singleData, studentId: s.id});
+                                        } else {
+                                          setSelectedStudentIds(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]);
+                                        }
+                                      }}
+                                      className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${isSelected ? 'bg-blue-50/30' : ''}`}
+                                    >
+                                      <td className="px-6 py-4 text-center">
+                                        <input
+                                          type={method === 'single' ? 'radio' : 'checkbox'}
+                                          checked={isSelected}
+                                          readOnly
+                                          className={`w-4 h-4 text-[#1B3A6B] focus:ring-[#1B3A6B] ${method === 'bulk' ? 'rounded' : ''}`}
+                                        />
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <p className="font-bold text-slate-800">{s.name}</p>
+                                        <p className="text-[10px] font-mono text-slate-400">{s.regNumber}</p>
+                                      </td>
+                                      <td className="px-6 py-4 text-center capitalize text-slate-500 font-medium">
+                                        {s.gender || '—'}
+                                      </td>
+                                      <td className="px-6 py-4 text-center text-slate-500 font-medium">
+                                        {s.yearStarted || '—'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              ) : (
+                                <tr>
+                                  <td colSpan="4" className="px-6 py-12 text-center text-slate-400 italic">
+                                    No students found matching your current filters.
+                                  </td>
+                                </tr>
+                              )}
                             </tbody>
                           </table>
                         </div>
@@ -363,7 +394,7 @@ export default function IssuePage() {
                   <button onClick={() => setStep(1)} className="flex-1 py-3 text-slate-400 font-bold hover:text-slate-600 transition-colors">Back</button>
                   <button 
                     onClick={() => setStep(3)} 
-                    disabled={method === 'single' ? !singleData.studentId : selectedStudentIds.length === 0}
+                    disabled={eligibleLoading || (method === 'single' ? !singleData.studentId : selectedStudentIds.length === 0)}
                     className="bg-[#1B3A6B] text-white px-12 py-3 rounded-xl font-bold shadow-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#2a5496] transition-all"
                   >
                     Review Issuance
