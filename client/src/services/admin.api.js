@@ -30,6 +30,9 @@ export function setAccessToken(token) {
 }
 
 api.interceptors.request.use((config) => {
+  if (!_accessToken) {
+    _accessToken = localStorage.getItem('accessToken');
+  }
   if (_accessToken) {
     config.headers.Authorization = `Bearer ${_accessToken}`;
   }
