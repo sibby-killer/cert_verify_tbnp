@@ -13,6 +13,13 @@ export default function IssuePage() {
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
 
+  // Filter & Sorting State for Student Selection
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentGender, setStudentGender] = useState('');
+  const [studentYear, setStudentYear] = useState('');
+  const [studentSort, setStudentSort] = useState('name');
+  const [studentOrder, setStudentOrder] = useState('asc');
+
   // Single issuance state
   const [singleData, setSingleData] = useState({
     studentId: '',
@@ -38,17 +45,23 @@ export default function IssuePage() {
     loadCourses();
   }, []);
 
-  // ── Re-load eligible students whenever the selected course changes ──────────
+  // ── Re-load eligible students whenever the selected course or filters change ──────────
   const loadEligibleStudents = useCallback(async (courseId) => {
     if (!courseId) { setStudents([]); return; }
     try {
-      const res = await getEligibleStudents(courseId);
+      const res = await getEligibleStudents(courseId, {
+        search: studentSearch,
+        gender: studentGender,
+        yearStarted: studentYear,
+        sort: studentSort,
+        order: studentOrder
+      });
       setStudents(res.data || []);
     } catch (err) {
       console.error('Failed to load eligible students:', err);
       setStudents([]);
     }
-  }, []);
+  }, [studentSearch, studentGender, studentYear, studentSort, studentOrder]);
 
   useEffect(() => {
     loadEligibleStudents(singleData.courseId);
@@ -162,9 +175,9 @@ export default function IssuePage() {
             </div>
           </div>
 
-          <div className="max-w-2xl mx-auto bg-white rounded-3xl p-10 shadow-sm border border-slate-100 min-h-[400px] flex flex-col">
+          <div className="max-w-4xl mx-auto bg-white rounded-3xl p-10 shadow-sm border border-slate-100 min-h-[400px] flex flex-col">
             {step === 1 && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <h2 className="text-2xl font-bold text-[#1B3A6B] mb-2 text-center">Select Issuance Method</h2>
                 <p className="text-slate-400 text-center mb-10">Choose how you want to generate the secure certificates.</p>
                 <div className="grid grid-cols-2 gap-6">
@@ -197,50 +210,163 @@ export default function IssuePage() {
             )}
 
             {step === 2 && method === 'single' && (
-              <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-                <h3 className="font-bold text-slate-800">Student & Course Selection</h3>
-                <div className="space-y-4">
+              <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
+                <h3 className="font-bold text-slate-800 text-xl">Issue Individual Certificate</h3>
+                
+                <div className="space-y-6">
+                  {/* Program Selection - First Priority */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Select Student</label>
-                    <select 
-                      value={singleData.studentId}
-                      onChange={(e) => setSingleData({...singleData, studentId: e.target.value})}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#1B3A6B] bg-white"
-                    >
-                      <option value="">-- Choose Student --</option>
-                      {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.regNumber})</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Select Program</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">1. Select Program of Study</label>
                     <select 
                       value={singleData.courseId}
-                      onChange={(e) => setSingleData({...singleData, courseId: e.target.value})}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#1B3A6B] bg-white"
+                      onChange={(e) => setSingleData({...singleData, courseId: e.target.value, studentId: ''})}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#1B3A6B] bg-white font-bold text-[#1B3A6B]"
                     >
                       <option value="">-- Choose Program --</option>
                       {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
+
+                  {/* Student Selection Table */}
+                  {singleData.courseId && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                      <label className="block text-xs font-bold text-slate-400 uppercase">2. Select Eligible Student</label>
+                      
+                      {/* Filter Bar */}
+                      <div className="flex flex-wrap gap-3">
+                        <div className="relative flex-grow min-w-[200px]">
+                          <input
+                            type="text"
+                            placeholder="Search by name or reg number..."
+                            value={studentSearch}
+                            onChange={(e) => setStudentSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
+                          />
+                          <svg className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+
+                        <select
+                          value={studentGender}
+                          onChange={(e) => setStudentGender(e.target.value)}
+                          className="px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
+                        >
+                          <option value="">All Genders</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+
+                        <input
+                          type="number"
+                          placeholder="Year Started"
+                          value={studentYear}
+                          onChange={(e) => setStudentYear(e.target.value)}
+                          className="w-28 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
+                        />
+
+                        <select
+                          value={studentSort}
+                          onChange={(e) => setStudentSort(e.target.value)}
+                          className="px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
+                        >
+                          <option value="name">Sort by Name</option>
+                          <option value="regNumber">Sort by Reg No</option>
+                          <option value="gender">Sort by Gender</option>
+                          <option value="yearStarted">Sort by Year</option>
+                        </select>
+
+                        <select
+                          value={studentOrder}
+                          onChange={(e) => setStudentOrder(e.target.value)}
+                          className="px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
+                        >
+                          <option value="asc">Ascending</option>
+                          <option value="desc">Descending</option>
+                        </select>
+                      </div>
+
+                      {/* Scrollable Table */}
+                      <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="max-h-72 overflow-y-auto">
+                          <table className="w-full text-left text-sm border-collapse">
+                            <thead className="bg-slate-50 text-slate-400 uppercase text-[10px] font-black sticky top-0 z-10">
+                              <tr>
+                                <th className="px-6 py-4 w-12 text-center">Select</th>
+                                <th className="px-6 py-4">Student Details</th>
+                                <th className="px-6 py-4 text-center">Gender</th>
+                                <th className="px-6 py-4 text-center">Joined</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 bg-white">
+                              {students.map(s => (
+                                <tr 
+                                  key={s.id} 
+                                  onClick={() => setSingleData({...singleData, studentId: s.id})}
+                                  className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${singleData.studentId === s.id ? 'bg-blue-50/50' : ''}`}
+                                >
+                                  <td className="px-6 py-4 text-center">
+                                    <input
+                                      type="radio"
+                                      name="selectedStudent"
+                                      checked={singleData.studentId === s.id}
+                                      onChange={() => setSingleData({...singleData, studentId: s.id})}
+                                      className="w-4 h-4 text-[#1B3A6B] focus:ring-[#1B3A6B]"
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <p className="font-bold text-slate-800">{s.name}</p>
+                                    <p className="text-[10px] font-mono text-slate-400">{s.regNumber}</p>
+                                  </td>
+                                  <td className="px-6 py-4 text-center capitalize text-slate-500 font-medium">
+                                    {s.gender || '—'}
+                                  </td>
+                                  <td className="px-6 py-4 text-center text-slate-500 font-medium">
+                                    {s.yearStarted || '—'}
+                                  </td>
+                                </tr>
+                              ))}
+                              {students.length === 0 && (
+                                <tr>
+                                  <td colSpan="4" className="px-6 py-12 text-center text-slate-400 italic">
+                                    No eligible students found matching your criteria.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Academic Year */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Academic Year</label>
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-3">3. Graduation Year</label>
                     <input 
-                      type="text" 
+                      type="number" 
                       value={singleData.graduationYear}
                       onChange={(e) => setSingleData({...singleData, graduationYear: e.target.value})}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200" 
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#1B3A6B] outline-none" 
                     />
                   </div>
                 </div>
-                <div className="flex space-x-4 pt-4">
-                  <button onClick={() => setStep(1)} className="flex-1 py-3 text-slate-400 font-bold">Back</button>
-                  <button onClick={() => setStep(3)} className="bg-[#1B3A6B] text-white px-12 py-3 rounded-xl font-bold">Review</button>
+
+                <div className="flex space-x-4 pt-6">
+                  <button onClick={() => setStep(1)} className="flex-1 py-3 text-slate-400 font-bold hover:text-slate-600 transition-colors">Back</button>
+                  <button 
+                    onClick={() => setStep(3)} 
+                    disabled={!singleData.studentId || !singleData.courseId}
+                    className="bg-[#1B3A6B] text-white px-12 py-3 rounded-xl font-bold shadow-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#2a5496] transition-all"
+                  >
+                    Review Details
+                  </button>
                 </div>
               </div>
             )}
 
             {step === 2 && method === 'bulk' && (
-              <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+              <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
                 <div>
                   <h3 className="font-bold text-slate-800 mb-1">Upload CSV File</h3>
                   <p className="text-xs text-slate-400">Each row: <code className="bg-slate-100 px-1 rounded">studentId,courseId,graduationYear</code></p>
@@ -317,7 +443,7 @@ export default function IssuePage() {
             )}
 
             {step === 3 && (
-              <div className="animate-in fade-in duration-500 flex flex-col flex-grow">
+              <div className="max-w-2xl mx-auto animate-in fade-in duration-500 flex flex-col flex-grow">
                 <h3 className="text-xl font-bold text-slate-800 mb-6">Confirm Details</h3>
                 <div className="flex-grow space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100">
                   <div className="flex justify-between">
@@ -348,7 +474,7 @@ export default function IssuePage() {
             )}
 
             {step === 4 && method === 'single' && (
-              <div className="animate-in zoom-in duration-500 flex flex-col items-center justify-center flex-grow text-center pb-8">
+              <div className="max-w-2xl mx-auto animate-in zoom-in duration-500 flex flex-col items-center justify-center flex-grow text-center pb-8">
                 <div className="w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center mb-4 shadow-xl shadow-green-100">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
@@ -393,7 +519,7 @@ export default function IssuePage() {
             )}
 
             {step === 4 && method === 'bulk' && (
-              <div className="animate-in fade-in duration-500 flex flex-col flex-grow">
+              <div className="max-w-2xl mx-auto animate-in fade-in duration-500 flex flex-col flex-grow">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
