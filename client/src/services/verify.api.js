@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const verifyByNumber = async (cert) => {
-  const response = await axios.get(`/api/verify`, { params: { cert } });
+  const response = await axios.get(`/api/v1/verify`, { params: { cert } });
   return response.data;
 };
 
