@@ -67,6 +67,15 @@ export default function CertificatesPage() {
 
     if (selectedCerts.length === 0) return;
 
+    exportToCsv(selectedCerts, `certificates_selected_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const handleExportFiltered = () => {
+    if (certs.length === 0) return;
+    exportToCsv(certs, `certificates_filtered_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const exportToCsv = (data, filename) => {
     const csvRows = [
       [
         "Student Name",
@@ -79,7 +88,7 @@ export default function CertificatesPage() {
         "Status",
         "Issue Date"
       ],
-      ...selectedCerts.map(c => [
+      ...data.map(c => [
         c.student.name,
         c.student.regNumber,
         c.student.gender || 'N/A',
@@ -96,8 +105,9 @@ export default function CertificatesPage() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `certificates_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = filename;
     link.click();
+    URL.revokeObjectURL(link.href);
   };
 
   return (
@@ -130,6 +140,16 @@ export default function CertificatesPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   <span>Export Selected ({selectedIds.length})</span>
+                </button>
+                <button
+                  onClick={handleExportFiltered}
+                  disabled={certs.length === 0}
+                  className="bg-slate-700 text-white px-6 py-3 rounded-xl font-bold disabled:opacity-40 hover:bg-slate-800 transition-all shadow-lg flex items-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Export Filtered</span>
                 </button>
                 <Link 
                   to="/admin/issue" 
