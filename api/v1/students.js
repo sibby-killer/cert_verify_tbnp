@@ -1,6 +1,6 @@
 import { db } from '../../lib/db/index.js';
 import { students, certificates } from '../../lib/db/schema.js';
-import { eq, like, or, desc, asc, sql } from 'drizzle-orm';
+import { eq, like, or, and, desc, asc, sql } from 'drizzle-orm';
 import { compose } from '../../lib/middleware/compose.js';
 import { withRateLimit } from '../../lib/middleware/rateLimit.js';
 import { withAuth } from '../../lib/middleware/auth.js';
@@ -21,10 +21,34 @@ export default compose(
       case 'GET': {
         // ── Eligible Students mode ──────────────────────────────────────────
         if (mode === 'eligible') {
-          const { courseId, search } = req.query;
+          const { courseId, search, gender, yearStarted, sort, order } = req.query;
           if (!courseId) return res.status(400).json({ success: false, message: 'courseId is required' });
-          const notAlreadyCertified = sql`NOT EXISTS (SELECT 1 FROM ${certificates} WHERE ${certificates.studentId} = ${students.id} AND ${certificates.courseId} = ${courseId})`;
-          const searchCondition = search ? sql`AND (${students.name} LIKE ${'%' + search + '%'} OR ${students.regNumber} LIKE ${'%' + search + '%'})` : sql``;
+
+          const conditions = [
+            sql`NOT EXISTS (SELECT 1 FROM ${certificates} WHERE ${certificates.studentId} = ${students.id} AND ${certificates.courseId} = ${courseId})`
+          ];
+
+          if (search) {
+            conditions.push(or(like(students.name, `%${search}%`), like(students.regNumber, `%${search}%`)));
+          }
+          if (gender) {
+            conditions.push(eq(students.gender, gender));
+          }
+          if (yearStarted) {
+            conditions.push(eq(students.yearStarted, parseInt(yearStarted)));
+          }
+
+          let sortCol;
+          if (sort === 'gender') {
+            sortCol = sql`CASE WHEN ${students.gender} = 'male' THEN 1 WHEN ${students.gender} = 'female' THEN 2 ELSE 3 END`;
+          } else {
+            sortCol = {
+              name: students.name,
+              regNumber: students.regNumber,
+              yearStarted: students.yearStarted
+            }[sort] || students.name;
+          }
+
           const data = await db.select({ 
             id: students.id, 
             name: students.name, 
@@ -32,7 +56,11 @@ export default compose(
             email: students.email,
             gender: students.gender,
             yearStarted: students.yearStarted
-          }).from(students).where(sql`${notAlreadyCertified} ${searchCondition}`).orderBy(asc(students.name)).limit(500);
+          }).from(students)
+            .where(and(...conditions))
+            .orderBy(order === 'desc' ? desc(sortCol) : asc(sortCol))
+            .limit(500);
+
           return res.status(200).json({ success: true, data });
         }
 
