@@ -12,7 +12,7 @@ import axios from 'axios';
 
 // ── Axios instance ────────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: `${window.location.origin}/api/v1`,
   withCredentials: true, // send the httpOnly refresh-token cookie automatically
 });
 
