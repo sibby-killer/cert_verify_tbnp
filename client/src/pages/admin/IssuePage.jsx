@@ -58,7 +58,13 @@ export default function IssuePage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await issueSingle(singleData);
+      // Ensure graduationYear is a number for validation
+      const payload = {
+        ...singleData,
+        graduationYear: parseInt(singleData.graduationYear)
+      };
+
+      const res = await issueSingle(payload);
       if (res.success) {
         setResult(res.data);
         setStep(4);
@@ -66,7 +72,7 @@ export default function IssuePage() {
         setError(res.message);
       }
     } catch (err) {
-      setError('Issuance failed. Check if student already has a certificate for this course.');
+      setError(err.response?.data?.message || 'Issuance failed. Check if student already has a certificate for this course.');
     } finally {
       setSubmitting(false);
     }
