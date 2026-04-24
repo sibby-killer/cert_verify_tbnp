@@ -11,7 +11,7 @@ export default function StudentsPage() {
   const [currentId, setCurrentId] = useState(null);
   const [newStudent, setNewStudent] = useState({ name: '', regNumber: '', email: '', gender: '', yearStarted: '' });
   const [error, setError] = useState('');
-  
+
   // Search and Sort State
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('createdAt');
@@ -57,9 +57,9 @@ export default function StudentsPage() {
     setError('');
     setIsEdit(true);
     setCurrentId(student.id);
-    setNewStudent({ 
-      name: student.name, 
-      regNumber: student.regNumber, 
+    setNewStudent({
+      name: student.name,
+      regNumber: student.regNumber,
       email: student.email,
       gender: student.gender || '',
       yearStarted: student.yearStarted || ''
@@ -80,7 +80,7 @@ export default function StudentsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     // Convert yearStarted to number for the API
     const studentData = {
       ...newStudent,
@@ -94,7 +94,7 @@ export default function StudentsPage() {
       } else {
         res = await createStudent(studentData);
       }
-      
+
       if (res.success) {
         setShowModal(false);
         fetchData();
@@ -111,6 +111,7 @@ export default function StudentsPage() {
   };
 
   const handleBulkSubmit = async (e) => {
+    console.log("BULK SUBMIT FIRED");
     e.preventDefault();
     setBulkError('');
     setBulkResult(null);
@@ -150,7 +151,7 @@ export default function StudentsPage() {
               <div className="flex space-x-4">
                 {/* Search Input */}
                 <div className="relative">
-                  <input 
+                  <input
                     type="text"
                     placeholder="Search by name or reg..."
                     value={search}
@@ -163,7 +164,7 @@ export default function StudentsPage() {
                 </div>
 
                 {/* Sort Dropdown */}
-                <select 
+                <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
                   className="px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 text-sm bg-white"
@@ -175,7 +176,7 @@ export default function StudentsPage() {
                   <option value="createdAt">Sort by Date Added</option>
                 </select>
 
-                <select 
+                <select
                   value={order}
                   onChange={(e) => setOrder(e.target.value)}
                   className="px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 text-sm bg-white"
@@ -197,13 +198,13 @@ export default function StudentsPage() {
 
             {isSuperadmin && (
               <div className="flex space-x-3">
-                <button 
+                <button
                   onClick={handleOpenCreate}
                   className="bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-green-800 transition-all"
                 >
                   Add Student
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setBulkCsv('');
                     setBulkResult(null);
@@ -352,11 +353,11 @@ export default function StudentsPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Full Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newStudent.name}
-                  onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
+                  onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700"
                   placeholder="e.g. John Doe"
                   required
                 />
@@ -364,20 +365,20 @@ export default function StudentsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Registration Number</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newStudent.regNumber}
-                    onChange={(e) => setNewStudent({...newStudent, regNumber: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
+                    onChange={(e) => setNewStudent({ ...newStudent, regNumber: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700"
                     placeholder="BNP/2026/001"
                     required
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Gender</label>
-                  <select 
+                  <select
                     value={newStudent.gender}
-                    onChange={(e) => setNewStudent({...newStudent, gender: e.target.value})}
+                    onChange={(e) => setNewStudent({ ...newStudent, gender: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 bg-white"
                   >
                     <option value="">Select</option>
@@ -389,35 +390,35 @@ export default function StudentsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Year Started</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={newStudent.yearStarted}
-                    onChange={(e) => setNewStudent({...newStudent, yearStarted: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
+                    onChange={(e) => setNewStudent({ ...newStudent, yearStarted: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700"
                     placeholder="2026"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase mb-1">Email Address</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     value={newStudent.email}
-                    onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700" 
+                    onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700"
                     placeholder="john@example.com"
                   />
                 </div>
               </div>
               {error && <p className="text-red-500 text-sm italic">{error}</p>}
               <div className="flex space-x-3 mt-8">
-                <button 
+                <button
                   type="button"
                   onClick={() => setShowModal(false)}
                   className="flex-1 py-3 text-slate-400 font-bold hover:text-slate-600 transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="flex-2 bg-green-700 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-800"
                 >
