@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function CertTable({ certs, loading }) {
+export default function CertTable({ certs, loading, selectedIds, setSelectedIds }) {
   const [selectedCert, setSelectedCert] = useState(null);
 
   const handleExport = () => {
@@ -26,6 +26,24 @@ export default function CertTable({ certs, loading }) {
     URL.revokeObjectURL(url);
   };
 
+  const isAllSelected = certs.length > 0 && selectedIds.length === certs.length;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(certs.map(c => c.certificate.id));
+    }
+  };
+
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) 
+        ? prev.filter(i => i !== id) 
+        : [...prev, id]
+    );
+  };
+
   if (loading) {
     return (
       <div className="p-20 text-center">
@@ -40,6 +58,14 @@ export default function CertTable({ certs, loading }) {
       <table className="w-full text-left">
         <thead>
           <tr className="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest border-b border-slate-100">
+            <th className="px-8 py-5 w-10">
+              <input 
+                type="checkbox" 
+                checked={isAllSelected}
+                onChange={handleSelectAll}
+                className="w-4 h-4 rounded border-slate-300 text-[#1B3A6B] focus:ring-[#1B3A6B]"
+              />
+            </th>
             <th className="px-8 py-5">Student</th>
             <th className="px-8 py-5">Course</th>
             <th className="px-8 py-5">Security Number</th>
@@ -49,7 +75,18 @@ export default function CertTable({ certs, loading }) {
         </thead>
         <tbody className="divide-y divide-slate-50">
           {certs.map((item) => (
-            <tr key={item.certificate.id} className="hover:bg-slate-50/50 transition-colors group">
+            <tr 
+              key={item.certificate.id} 
+              className={`hover:bg-slate-50/50 transition-colors group ${selectedIds.includes(item.certificate.id) ? 'bg-blue-50/30' : ''}`}
+            >
+              <td className="px-8 py-5">
+                <input 
+                  type="checkbox" 
+                  checked={selectedIds.includes(item.certificate.id)}
+                  onChange={() => toggleSelection(item.certificate.id)}
+                  className="w-4 h-4 rounded border-slate-300 text-[#1B3A6B] focus:ring-[#1B3A6B]"
+                />
+              </td>
               <td className="px-8 py-5">
                 <p className="font-bold text-slate-800">{item.student.name}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{item.student.regNumber}</p>
@@ -86,7 +123,7 @@ export default function CertTable({ certs, loading }) {
           ))}
           {certs.length === 0 && (
             <tr>
-              <td colSpan="5" className="px-8 py-20 text-center text-slate-400 font-medium italic">
+              <td colSpan="6" className="px-8 py-20 text-center text-slate-400 font-medium italic">
                 No certificate records found matching your criteria.
               </td>
             </tr>
