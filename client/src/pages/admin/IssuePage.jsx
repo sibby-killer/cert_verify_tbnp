@@ -12,6 +12,7 @@ export default function IssuePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+  const [bulkResults, setBulkResults] = useState(null);
 
   // Filter & Sorting State for Student Selection
   const [studentSearch, setStudentSearch] = useState('');
@@ -20,15 +21,13 @@ export default function IssuePage() {
   const [studentSort, setStudentSort] = useState('name');
   const [studentOrder, setStudentOrder] = useState('asc');
 
-  // Single issuance state
+  // Issuance Selection State
+  const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [singleData, setSingleData] = useState({
     studentId: '',
     courseId: '',
     graduationYear: new Date().getFullYear().toString()
   });
-
-  // Bulk issuance state
-  const [bulkFile, setBulkFile] = useState(null);
 
   // ── Load courses once on mount ────────────────────────────────────────────
   useEffect(() => {
@@ -71,7 +70,6 @@ export default function IssuePage() {
     setSubmitting(true);
     setError('');
     try {
-      // Ensure graduationYear is a number for validation
       const payload = {
         ...singleData,
         graduationYear: parseInt(singleData.graduationYear)
@@ -91,62 +89,47 @@ export default function IssuePage() {
     }
   };
 
-  const [bulkResults, setBulkResults] = useState(null);
-
   const handleIssueBulk = async () => {
-    if (!bulkFile) return;
+    if (selectedStudentIds.length === 0) return;
     setSubmitting(true);
     setError('');
     setBulkResults(null);
 
-    try {
-      const text = await bulkFile.text();
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-      
-      // Skip header row if present (detect by checking if first row has non-ID content)
-      const rows = lines[0]?.toLowerCase().includes('student') || lines[0]?.toLowerCase().includes('name')
-        ? lines.slice(1)
-        : lines;
+    const results = { success: [], failed: [] };
 
-      if (rows.length === 0) {
-        setError('CSV file is empty or has no data rows.');
-        setSubmitting(false);
-        return;
-      }
-
-      const results = { success: [], failed: [] };
-
-      for (const row of rows) {
-        // Support: studentId,courseId,graduationYear  OR  regNumber,courseCode,year
-        const cols = row.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-        if (cols.length < 3) {
-          results.failed.push({ row, reason: 'Invalid format — need 3 columns: studentId,courseId,graduationYear' });
-          continue;
+    for (const studentId of selectedStudentIds) {
+      try {
+        const res = await issueSingle({
+          studentId,
+          courseId: singleData.courseId,
+          graduationYear: parseInt(singleData.graduationYear)
+        });
+        if (res.success) {
+          results.success.push({
+            name: res.data?.student?.name || studentId,
+            securityNumber: res.data?.certificate?.securityNumber,
+          });
+        } else {
+          results.failed.push({ studentId, reason: res.message });
         }
-
-        const [studentId, courseId, graduationYear] = cols;
-
-        try {
-          const res = await issueSingle({ studentId, courseId, graduationYear });
-          if (res.success) {
-            results.success.push({
-              name: res.data?.student?.name || studentId,
-              securityNumber: res.data?.certificate?.securityNumber,
-            });
-          } else {
-            results.failed.push({ row, reason: res.message });
-          }
-        } catch (err) {
-          results.failed.push({ row, reason: err.response?.data?.message || 'Issuance failed' });
-        }
+      } catch (err) {
+        results.failed.push({ studentId, reason: err.response?.data?.message || 'Issuance failed' });
       }
+    }
 
-      setBulkResults(results);
-      setStep(4);
-    } catch (err) {
-      setError('Failed to read CSV file. Make sure it is a valid .csv file.');
-    } finally {
-      setSubmitting(false);
+    setBulkResults(results);
+    setStep(4);
+    setSubmitting(false);
+  };
+
+  const isAllOnPageSelected = students.length > 0 && students.every(s => selectedStudentIds.includes(s.id));
+
+  const toggleAllOnPage = () => {
+    if (isAllOnPageSelected) {
+      setSelectedStudentIds(prev => prev.filter(id => !students.some(s => s.id === id)));
+    } else {
+      const newIds = students.map(s => s.id).filter(id => !selectedStudentIds.includes(id));
+      setSelectedStudentIds(prev => [...prev, ...newIds]);
     }
   };
 
@@ -182,7 +165,7 @@ export default function IssuePage() {
                 <p className="text-slate-400 text-center mb-10">Choose how you want to generate the secure certificates.</p>
                 <div className="grid grid-cols-2 gap-6">
                   <button 
-                    onClick={() => { setMethod('single'); setStep(2); }}
+                    onClick={() => { setMethod('single'); setStep(2); setSelectedStudentIds([]); setSingleData({...singleData, studentId: ''}); }}
                     className="group border-2 border-slate-50 p-8 rounded-3xl hover:border-[#1B3A6B] transition-all text-center"
                   >
                     <div className="w-16 h-16 bg-[#1B3A6B]/5 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-[#1B3A6B] group-hover:text-white transition-all text-[#1B3A6B]">
@@ -194,32 +177,35 @@ export default function IssuePage() {
                     <p className="text-xs text-slate-400 mt-2">Issue for one specific student manually.</p>
                   </button>
                   <button 
-                    onClick={() => { setMethod('bulk'); setStep(2); }}
+                    onClick={() => { setMethod('bulk'); setStep(2); setSelectedStudentIds([]); setSingleData({...singleData, studentId: ''}); }}
                     className="group border-2 border-slate-50 p-8 rounded-3xl hover:border-[#1B3A6B] transition-all text-center"
                   >
                     <div className="w-16 h-16 bg-[#1B3A6B]/5 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-[#1B3A6B] group-hover:text-white transition-all text-[#1B3A6B]">
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     </div>
-                    <h3 className="font-bold text-slate-700">Bulk Upload</h3>
-                    <p className="text-xs text-slate-400 mt-2">Upload CSV file for batch processing.</p>
+                    <h3 className="font-bold text-slate-700">Bulk Selection</h3>
+                    <p className="text-xs text-slate-400 mt-2">Select multiple students from the eligibility registry.</p>
                   </button>
                 </div>
               </div>
             )}
 
-            {step === 2 && method === 'single' && (
+            {step === 2 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-8">
-                <h3 className="font-bold text-slate-800 text-xl">Issue Individual Certificate</h3>
+                <h3 className="font-bold text-slate-800 text-xl">{method === 'single' ? 'Issue Individual Certificate' : 'Bulk Certificate Issuance'}</h3>
                 
                 <div className="space-y-6">
-                  {/* Program Selection - First Priority */}
+                  {/* Program Selection */}
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-3">1. Select Program of Study</label>
                     <select 
                       value={singleData.courseId}
-                      onChange={(e) => setSingleData({...singleData, courseId: e.target.value, studentId: ''})}
+                      onChange={(e) => {
+                        setSingleData({...singleData, courseId: e.target.value, studentId: ''});
+                        setSelectedStudentIds([]);
+                      }}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#1B3A6B] bg-white font-bold text-[#1B3A6B]"
                     >
                       <option value="">-- Choose Program --</option>
@@ -230,7 +216,14 @@ export default function IssuePage() {
                   {/* Student Selection Table */}
                   {singleData.courseId && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                      <label className="block text-xs font-bold text-slate-400 uppercase">2. Select Eligible Student</label>
+                      <div className="flex justify-between items-end">
+                        <label className="block text-xs font-bold text-slate-400 uppercase">2. Select {method === 'single' ? 'Student' : 'Students'}</label>
+                        {method === 'bulk' && (
+                          <span className="text-[10px] font-black text-[#1B3A6B] bg-blue-50 px-3 py-1 rounded-full">
+                            {selectedStudentIds.length} SELECTED
+                          </span>
+                        )}
+                      </div>
                       
                       {/* Filter Bar */}
                       <div className="flex flex-wrap gap-3">
@@ -259,10 +252,10 @@ export default function IssuePage() {
 
                         <input
                           type="number"
-                          placeholder="Year Started"
+                          placeholder="Year"
                           value={studentYear}
                           onChange={(e) => setStudentYear(e.target.value)}
-                          className="w-28 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
+                          className="w-24 px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
                         />
 
                         <select
@@ -281,8 +274,8 @@ export default function IssuePage() {
                           onChange={(e) => setStudentOrder(e.target.value)}
                           className="px-4 py-2.5 rounded-xl border border-slate-100 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-[#1B3A6B]"
                         >
-                          <option value="asc">Ascending</option>
-                          <option value="desc">Descending</option>
+                          <option value="asc">Asc</option>
+                          <option value="desc">Desc</option>
                         </select>
                       </div>
 
@@ -292,47 +285,61 @@ export default function IssuePage() {
                           <table className="w-full text-left text-sm border-collapse">
                             <thead className="bg-slate-50 text-slate-400 uppercase text-[10px] font-black sticky top-0 z-10">
                               <tr>
-                                <th className="px-6 py-4 w-12 text-center">Select</th>
+                                <th className="px-6 py-4 w-12 text-center">
+                                  {method === 'bulk' && (
+                                    <input 
+                                      type="checkbox" 
+                                      checked={isAllOnPageSelected} 
+                                      onChange={toggleAllOnPage} 
+                                      className="w-4 h-4 rounded border-slate-300 text-[#1B3A6B] focus:ring-[#1B3A6B]"
+                                    />
+                                  )}
+                                  {method === 'single' && 'Pick'}
+                                </th>
                                 <th className="px-6 py-4">Student Details</th>
                                 <th className="px-6 py-4 text-center">Gender</th>
                                 <th className="px-6 py-4 text-center">Joined</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50 bg-white">
-                              {students.map(s => (
-                                <tr 
-                                  key={s.id} 
-                                  onClick={() => setSingleData({...singleData, studentId: s.id})}
-                                  className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${singleData.studentId === s.id ? 'bg-blue-50/50' : ''}`}
-                                >
-                                  <td className="px-6 py-4 text-center">
-                                    <input
-                                      type="radio"
-                                      name="selectedStudent"
-                                      checked={singleData.studentId === s.id}
-                                      onChange={() => setSingleData({...singleData, studentId: s.id})}
-                                      className="w-4 h-4 text-[#1B3A6B] focus:ring-[#1B3A6B]"
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    <p className="font-bold text-slate-800">{s.name}</p>
-                                    <p className="text-[10px] font-mono text-slate-400">{s.regNumber}</p>
-                                  </td>
-                                  <td className="px-6 py-4 text-center capitalize text-slate-500 font-medium">
-                                    {s.gender || '—'}
-                                  </td>
-                                  <td className="px-6 py-4 text-center text-slate-500 font-medium">
-                                    {s.yearStarted || '—'}
-                                  </td>
-                                </tr>
-                              ))}
-                              {students.length === 0 && (
-                                <tr>
-                                  <td colSpan="4" className="px-6 py-12 text-center text-slate-400 italic">
-                                    No eligible students found matching your criteria.
-                                  </td>
-                                </tr>
-                              )}
+                              {students.map(s => {
+                                const isSelected = method === 'single' 
+                                  ? singleData.studentId === s.id 
+                                  : selectedStudentIds.includes(s.id);
+                                
+                                return (
+                                  <tr 
+                                    key={s.id} 
+                                    onClick={() => {
+                                      if (method === 'single') {
+                                        setSingleData({...singleData, studentId: s.id});
+                                      } else {
+                                        setSelectedStudentIds(prev => prev.includes(s.id) ? prev.filter(id => id !== s.id) : [...prev, s.id]);
+                                      }
+                                    }}
+                                    className={`hover:bg-slate-50/50 transition-colors cursor-pointer ${isSelected ? 'bg-blue-50/30' : ''}`}
+                                  >
+                                    <td className="px-6 py-4 text-center">
+                                      <input
+                                        type={method === 'single' ? 'radio' : 'checkbox'}
+                                        checked={isSelected}
+                                        readOnly
+                                        className={`w-4 h-4 text-[#1B3A6B] focus:ring-[#1B3A6B] ${method === 'bulk' ? 'rounded' : ''}`}
+                                      />
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <p className="font-bold text-slate-800">{s.name}</p>
+                                      <p className="text-[10px] font-mono text-slate-400">{s.regNumber}</p>
+                                    </td>
+                                    <td className="px-6 py-4 text-center capitalize text-slate-500 font-medium">
+                                      {s.gender || '—'}
+                                    </td>
+                                    <td className="px-6 py-4 text-center text-slate-500 font-medium">
+                                      {s.yearStarted || '—'}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
@@ -340,7 +347,7 @@ export default function IssuePage() {
                     </div>
                   )}
 
-                  {/* Academic Year */}
+                  {/* Graduation Year */}
                   <div>
                     <label className="block text-xs font-bold text-slate-400 uppercase mb-3">3. Graduation Year</label>
                     <input 
@@ -356,87 +363,10 @@ export default function IssuePage() {
                   <button onClick={() => setStep(1)} className="flex-1 py-3 text-slate-400 font-bold hover:text-slate-600 transition-colors">Back</button>
                   <button 
                     onClick={() => setStep(3)} 
-                    disabled={!singleData.studentId || !singleData.courseId}
+                    disabled={method === 'single' ? !singleData.studentId : selectedStudentIds.length === 0}
                     className="bg-[#1B3A6B] text-white px-12 py-3 rounded-xl font-bold shadow-lg disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#2a5496] transition-all"
                   >
-                    Review Details
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {step === 2 && method === 'bulk' && (
-              <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
-                <div>
-                  <h3 className="font-bold text-slate-800 mb-1">Upload CSV File</h3>
-                  <p className="text-xs text-slate-400">Each row: <code className="bg-slate-100 px-1 rounded">studentId,courseId,graduationYear</code></p>
-                </div>
-
-                {/* CSV Template download */}
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-bold text-slate-700">Need a template?</p>
-                      <p className="text-xs text-slate-400 mt-0.5">Download and fill in your student IDs</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const header = 'studentId,courseId,graduationYear';
-                        const examples = students.slice(0,2).map((s,i) => `${s.id},${courses[0]?.id || 'COURSE_ID'},${new Date().getFullYear()}`).join('\n');
-                        const blob = new Blob([header + '\n' + examples], { type: 'text/csv' });
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = 'bnp_bulk_template.csv';
-                        a.click();
-                      }}
-                      className="bg-green-700 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-800 transition-all"
-                    >
-                      Download Template
-                    </button>
-                  </div>
-
-                  {/* Show student/course reference */}
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <p className="font-bold text-slate-500 uppercase tracking-wider mb-1">Students</p>
-                      {students.slice(0, 4).map(s => (
-                        <p key={s.id} className="font-mono text-slate-400 truncate">{s.id.slice(0,8)}… = {s.name}</p>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-500 uppercase tracking-wider mb-1">Courses</p>
-                      {courses.slice(0, 4).map(c => (
-                        <p key={c.id} className="font-mono text-slate-400 truncate">{c.id.slice(0,8)}… = {c.name}</p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Select CSV File</label>
-                  <input
-                    type="file"
-                    accept=".csv,text/csv"
-                    onChange={(e) => setBulkFile(e.target.files[0] || null)}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-green-700 file:text-white hover:file:bg-green-800 cursor-pointer"
-                  />
-                  {bulkFile && <p className="text-xs text-green-700 mt-1 font-medium">✓ {bulkFile.name} selected</p>}
-                </div>
-
-                {error && <p className="text-red-500 text-sm italic">{error}</p>}
-
-                <div className="flex space-x-4 pt-2">
-                  <button onClick={() => setStep(1)} className="flex-1 py-3 text-slate-400 font-bold">Back</button>
-                  <button
-                    onClick={handleIssueBulk}
-                    disabled={!bulkFile || submitting}
-                    className="bg-green-700 text-white px-10 py-3 rounded-xl font-bold shadow-lg disabled:opacity-40 flex items-center space-x-2"
-                  >
-                    {submitting ? (
-                      <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div><span>Processing…</span></>
-                    ) : (
-                      <span>Process CSV</span>
-                    )}
+                    Review Issuance
                   </button>
                 </div>
               </div>
@@ -444,30 +374,34 @@ export default function IssuePage() {
 
             {step === 3 && (
               <div className="max-w-2xl mx-auto animate-in fade-in duration-500 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold text-slate-800 mb-6">Confirm Details</h3>
+                <h3 className="text-xl font-bold text-slate-800 mb-6">Confirm Issuance</h3>
                 <div className="flex-grow space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Student:</span>
-                    <span className="font-bold text-[#1B3A6B]">{students.find(s => s.id === singleData.studentId)?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Course:</span>
+                    <span className="text-slate-400">Program:</span>
                     <span className="font-bold text-[#1B3A6B] text-right">{courses.find(c => c.id === singleData.courseId)?.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Graduation:</span>
+                    <span className="text-slate-400">Academic Year:</span>
                     <span className="font-bold text-[#1B3A6B]">{singleData.graduationYear}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-4 mt-4">
+                    <span className="text-slate-400">{method === 'single' ? 'Student:' : 'Total Students:'}</span>
+                    <span className="font-bold text-[#1B3A6B]">
+                      {method === 'single' 
+                        ? students.find(s => s.id === singleData.studentId)?.name 
+                        : `${selectedStudentIds.length} Students Selected`}
+                    </span>
                   </div>
                 </div>
                 {error && <p className="text-red-500 text-sm mt-4 italic">{error}</p>}
                 <div className="flex space-x-4 mt-10">
-                  <button onClick={() => setStep(2)} className="flex-1 py-3 text-slate-400 font-bold">Edit</button>
+                  <button onClick={() => setStep(2)} className="flex-1 py-3 text-slate-400 font-bold">Edit Selection</button>
                   <button 
-                    onClick={handleIssueSingle} 
+                    onClick={method === 'single' ? handleIssueSingle : handleIssueBulk} 
                     disabled={submitting}
                     className="flex-2 bg-[#1B3A6B] text-white px-12 py-3 rounded-xl font-bold shadow-lg disabled:opacity-50"
                   >
-                    {submitting ? 'Generating...' : 'Finalize & Sign Certificate'}
+                    {submitting ? 'Signing...' : `Confirm & Issue ${method === 'single' ? 'Certificate' : 'Certificates'}`}
                   </button>
                 </div>
               </div>
@@ -483,20 +417,16 @@ export default function IssuePage() {
                 <h2 className="text-2xl font-bold text-slate-800 mb-1">Successfully Issued</h2>
                 <p className="text-slate-400 mb-6 text-sm px-4">The certificate has been digitally signed and the student's secure QR verifier is ready.</p>
 
-                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg w-full max-w-sm mb-6 relative overflow-hidden" id="qr-export-container">
+                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-lg w-full max-w-sm mb-6 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-green-700"></div>
                   <h3 className="font-bold text-slate-800 text-lg mb-1">{students.find(s => s.id === singleData.studentId)?.name}</h3>
                   <p className="text-xs text-slate-500 mb-4 font-medium uppercase tracking-wider">{courses.find(c => c.id === singleData.courseId)?.name}</p>
 
                   {result?.certificate?.qrCodeUrl && (
-                    <img
-                      src={result.certificate.qrCodeUrl}
-                      alt="Verification QR Code"
-                      className="w-48 h-48 mx-auto rounded-xl border border-slate-100 shadow-sm mb-4"
-                    />
+                    <img src={result.certificate.qrCodeUrl} alt="QR" className="w-48 h-48 mx-auto rounded-xl border border-slate-100 shadow-sm mb-4" />
                   )}
 
-                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Assigned Security Number</label>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Security Number</label>
                   <p className="font-mono text-lg font-bold text-green-700 tracking-widest">{result?.certificate?.securityNumber}</p>
                 </div>
 
@@ -504,15 +434,15 @@ export default function IssuePage() {
                   <a
                     href={result?.certificate?.qrCodeUrl}
                     download={`QR_${result?.certificate?.securityNumber}.png`}
-                    className="flex-1 bg-green-700 text-white px-2 py-3 rounded-xl font-bold hover:bg-green-800 transition-all shadow-md text-sm cursor-pointer text-center"
+                    className="flex-1 bg-green-700 text-white px-2 py-3 rounded-xl font-bold hover:bg-green-800 transition-all shadow-md text-sm text-center"
                   >
                     Download QR
                   </a>
                   <button
-                    onClick={() => { setStep(1); setSingleData({ studentId: '', courseId: '', graduationYear: new Date().getFullYear().toString() }); setResult(null); }}
+                    onClick={() => { setStep(1); setSingleData({...singleData, studentId: ''}); setResult(null); setSelectedStudentIds([]); }}
                     className="flex-1 bg-slate-900 text-white px-2 py-3 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-md text-sm"
                   >
-                    Issue Another
+                    Issue More
                   </button>
                 </div>
               </div>
@@ -538,8 +468,8 @@ export default function IssuePage() {
                     <div className="space-y-1 max-h-40 overflow-y-auto">
                       {bulkResults.success.map((r, i) => (
                         <div key={i} className="flex justify-between text-sm bg-green-50 px-4 py-2 rounded-xl">
-                          <span className="font-medium text-slate-700">{r.name}</span>
-                          <span className="font-mono text-green-700 text-xs">{r.securityNumber}</span>
+                          <span className="font-medium text-slate-700">{r.student?.name || 'Student'}</span>
+                          <span className="font-mono text-green-700 text-xs">{r.certificate?.securityNumber}</span>
                         </div>
                       ))}
                     </div>
@@ -553,7 +483,7 @@ export default function IssuePage() {
                       {bulkResults.failed.map((r, i) => (
                         <div key={i} className="text-xs bg-red-50 px-4 py-2 rounded-xl">
                           <p className="text-red-600 font-medium">{r.reason}</p>
-                          <p className="font-mono text-slate-400 truncate">{r.row}</p>
+                          <p className="font-mono text-slate-400 truncate">ID: {r.studentId}</p>
                         </div>
                       ))}
                     </div>
@@ -561,7 +491,7 @@ export default function IssuePage() {
                 )}
 
                 <button
-                  onClick={() => { setStep(1); setBulkFile(null); setBulkResults(null); setError(''); }}
+                  onClick={() => { setStep(1); setBulkResults(null); setError(''); setSelectedStudentIds([]); }}
                   className="mt-auto bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all text-sm"
                 >
                   Start New Issuance
