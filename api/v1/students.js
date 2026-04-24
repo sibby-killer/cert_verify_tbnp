@@ -21,42 +21,59 @@ export default compose(
       case 'GET': {
         // ── Eligible Students mode ──────────────────────────────────────────
         if (mode === 'eligible') {
-          const { courseId, search, gender, yearStarted, sort, order } = req.query;
-          if (!courseId) return res.status(400).json({ success: false, message: 'courseId is required' });
+          const { courseId, search, gender, yearStarted, sort = 'name', order = 'asc' } = req.query;
 
-          const conditions = [
-            sql`NOT EXISTS (SELECT 1 FROM ${certificates} WHERE ${certificates.studentId} = ${students.id} AND ${certificates.courseId} = ${courseId})`
-          ];
+          if (!courseId) {
+            return res.status(400).json({ success: false, message: 'courseId is required' });
+          }
+
+          const conditions = [];
+
+          // Exclude already certified
+          conditions.push(sql`
+            NOT EXISTS (
+              SELECT 1 FROM ${certificates}
+              WHERE ${certificates.studentId} = ${students.id}
+              AND ${certificates.courseId} = ${courseId}
+            )
+          `);
 
           if (search) {
-            conditions.push(or(like(students.name, `%${search}%`), like(students.regNumber, `%${search}%`)));
+            conditions.push(
+              or(
+                like(students.name, `%${search}%`),
+                like(students.regNumber, `%${search}%`)
+              )
+            );
           }
+
           if (gender) {
             conditions.push(eq(students.gender, gender));
           }
+
           if (yearStarted) {
             conditions.push(eq(students.yearStarted, parseInt(yearStarted)));
           }
 
-          let sortCol;
-          if (sort === 'gender') {
-            sortCol = sql`CASE WHEN ${students.gender} = 'male' THEN 1 WHEN ${students.gender} = 'female' THEN 2 ELSE 3 END`;
-          } else {
-            sortCol = {
+          const allowedSort = {
+            name: students.name,
+            regNumber: students.regNumber,
+            gender: students.gender,
+            yearStarted: students.yearStarted,
+          };
+
+          const sortCol = allowedSort[sort] || students.name;
+
+          const data = await db
+            .select({
+              id: students.id,
               name: students.name,
               regNumber: students.regNumber,
-              yearStarted: students.yearStarted
-            }[sort] || students.name;
-          }
-
-          const data = await db.select({ 
-            id: students.id, 
-            name: students.name, 
-            regNumber: students.regNumber, 
-            email: students.email,
-            gender: students.gender,
-            yearStarted: students.yearStarted
-          }).from(students)
+              email: students.email,
+              gender: students.gender,
+              yearStarted: students.yearStarted,
+            })
+            .from(students)
             .where(and(...conditions))
             .orderBy(order === 'desc' ? desc(sortCol) : asc(sortCol))
             .limit(500);
