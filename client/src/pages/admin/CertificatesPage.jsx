@@ -86,7 +86,8 @@ export default function CertificatesPage() {
         "Graduation Year",
         "Security Number",
         "Status",
-        "Issue Date"
+        "Issue Date",
+        "Verification URL"
       ],
       ...data.map(c => [
         c.student.name,
@@ -97,7 +98,8 @@ export default function CertificatesPage() {
         c.certificate.graduationYear,
         c.certificate.securityNumber,
         c.certificate.status,
-        new Date(c.certificate.issuedDate || c.certificate.createdAt).toLocaleDateString()
+        new Date(c.certificate.issuedDate || c.certificate.createdAt).toLocaleDateString(),
+        `${window.location.origin}/verify?cert=${c.certificate.securityNumber}`
       ])
     ];
 
