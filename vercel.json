@@ -9,7 +9,6 @@
     { "source": "/api/v1/dashboard",                             "destination": "/api/v1/dashboard.js" },
     { "source": "/api/v1/settings",                              "destination": "/api/v1/dashboard.js?mode=settings" },
     { "source": "/api/v1/students/eligible",                     "destination": "/api/v1/students.js?mode=eligible" },
-    { "source": "/api/v1/students",                              "destination": "/api/v1/students.js" },
     { "source": "/api/v1/students/:id",                          "destination": "/api/v1/students.js?id=:id" },
     { "source": "/api/v1/courses",                               "destination": "/api/v1/courses.js" },
     { "source": "/api/v1/courses/:id",                           "destination": "/api/v1/courses.js?id=:id" },
