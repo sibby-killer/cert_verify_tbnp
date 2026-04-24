@@ -87,7 +87,8 @@ export default function CertificatesPage() {
         "Security Number",
         "Status",
         "Issue Date",
-        "Verification URL"
+        "Verification URL",
+        "QR Image DataURL"
       ],
       ...data.map(c => [
         c.student.name,
@@ -99,7 +100,8 @@ export default function CertificatesPage() {
         c.certificate.securityNumber,
         c.certificate.status,
         new Date(c.certificate.issuedDate || c.certificate.createdAt).toLocaleDateString(),
-        `${window.location.origin}/verify?cert=${c.certificate.securityNumber}`
+        `${window.location.origin}/verify?cert=${c.certificate.securityNumber}`,
+        c.certificate.qrCodeUrl || ''
       ])
     ];
 
