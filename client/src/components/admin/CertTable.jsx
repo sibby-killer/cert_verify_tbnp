@@ -3,6 +3,29 @@ import React, { useState } from 'react';
 export default function CertTable({ certs, loading }) {
   const [selectedCert, setSelectedCert] = useState(null);
 
+  const handleExport = () => {
+    if (!selectedCert) return;
+    const data = {
+      studentName: selectedCert.student.name,
+      registrationNumber: selectedCert.student.regNumber,
+      gender: selectedCert.student.gender,
+      yearStarted: selectedCert.student.yearStarted,
+      course: selectedCert.course.name,
+      graduationYear: selectedCert.certificate.graduationYear,
+      issueDate: new Date(selectedCert.certificate.createdAt).toLocaleDateString(),
+      securityNumber: selectedCert.certificate.securityNumber,
+      status: selectedCert.certificate.status,
+      certificateId: selectedCert.certificate.id
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Cert_${selectedCert.certificate.securityNumber}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="p-20 text-center">
@@ -143,16 +166,27 @@ export default function CertTable({ certs, loading }) {
                 <div className="flex-grow">
                   <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Certificate ID</label>
                   <p className="font-mono text-[10px] text-slate-400 break-all mb-4">{selectedCert.certificate.id}</p>
-                  <a 
-                    href={selectedCert.certificate.qrCodeUrl}
-                    download={`QR_${selectedCert.certificate.securityNumber}.png`}
-                    className="inline-flex items-center text-xs font-bold text-[#1B3A6B] hover:underline"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download QR Code
-                  </a>
+                  <div className="flex flex-col space-y-2">
+                    <a 
+                      href={selectedCert.certificate.qrCodeUrl}
+                      download={`QR_${selectedCert.certificate.securityNumber}.png`}
+                      className="inline-flex items-center text-xs font-bold text-[#1B3A6B] hover:underline"
+                    >
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Download QR Code
+                    </a>
+                    <button 
+                      onClick={handleExport}
+                      className="inline-flex items-center text-xs font-bold text-green-700 hover:underline w-fit"
+                    >
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Export Data (JSON)
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
