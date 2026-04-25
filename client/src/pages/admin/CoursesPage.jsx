@@ -2,8 +2,12 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from '../../components/admin/Sidebar.jsx';
 import TopBar from '../../components/admin/TopBar.jsx';
 import { getCourses, createCourse, updateCourse, deleteCourse } from '../../services/admin.api.js';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function CoursesPage() {
+  const { user } = useAuth();
+  const isSuperadmin = user?.role === 'superadmin';
+
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -11,19 +15,30 @@ export default function CoursesPage() {
   const [currentId, setCurrentId] = useState(null);
   const [newCourse, setNewCourse] = useState({ name: '', deptCode: '' });
   const [error, setError] = useState('');
-  
-  const token = localStorage.getItem('token');
-  const role = token ? JSON.parse(atob(token.split('.')[1])).role : 'admin';
-  const isSuperadmin = role === 'superadmin';
+
+  // Search, Sort, Pagination state
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('createdAt');
+  const [order, setOrder] = useState('desc');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [search, sort, order, page]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await getCourses();
-      setCourses(res.data);
+      const res = await getCourses({
+        search,
+        sort,
+        order,
+        page,
+        limit: 12
+      });
+      setCourses(res.data || []);
+      setPagination(res.pagination || null);
     } catch (err) {
       console.error(err);
     } finally {
@@ -100,6 +115,39 @@ export default function CoursesPage() {
             )}
           </div>
 
+          {/* Search + Sort UI */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1); // Reset to first page on search
+              }}
+              className="px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-green-700 min-w-[250px]"
+            />
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-green-700"
+            >
+              <option value="name">Name</option>
+              <option value="deptCode">Dept Code</option>
+              <option value="createdAt">Date Added</option>
+            </select>
+
+            <select
+              value={order}
+              onChange={(e) => setOrder(e.target.value)}
+              className="px-4 py-2 rounded-xl border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-green-700"
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
               <div className="col-span-full py-20 text-center">
@@ -135,6 +183,31 @@ export default function CoursesPage() {
               </div>
             )}
           </div>
+
+          {/* Pagination UI */}
+          {pagination && pagination.pages > 1 && (
+            <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-100">
+              <button
+                disabled={!pagination.hasPrev}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                className="px-6 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                ← Previous
+              </button>
+
+              <span className="text-sm font-bold text-slate-400">
+                Page {page} of {pagination.pages}
+              </span>
+
+              <button
+                disabled={!pagination.hasNext}
+                onClick={() => setPage(p => p + 1)}
+                className="px-6 py-2 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </main>
       </div>
 
